@@ -1,0 +1,35 @@
+{
+  "source": "NASA GISS Surface Temperature Analysis (GISTEMP v4)",
+  "source_url": "https://data.giss.nasa.gov/gistemp/",
+  "downloaded_at": "2026-11-21T17:56:11+00:00",
+  "files": {
+    "GLB.Ts+dSST.csv": {
+      "description": "Global mean, monthly + seasonal + annual",
+      "url": "https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.csv",
+      "bytes": 12887,
+      "last_modified": "Tue, 10 Nov 2026 13:53:24 GMT",
+      "sha256": "a7b1939db2e7e484c798e925e0f07f8184356c52ac0e7ce264adcd0f25e81253"
+    },
+    "NH.Ts+dSST.csv": {
+      "description": "Northern Hemisphere mean, monthly + seasonal + annual",
+      "url": "https://data.giss.nasa.gov/gistemp/tabledata_v4/NH.Ts+dSST.csv",
+      "bytes": 12941,
+      "last_modified": "Tue, 10 Nov 2026 13:53:24 GMT",
+      "sha256": "145038f1680872e87a5441f1ca3a554c56a8bc1a1f8a429cf25104c72ff2f327"
+    },
+    "SH.Ts+dSST.csv": {
+      "description": "Southern Hemisphere mean, monthly + seasonal + annual",
+      "url": "https://data.giss.nasa.gov/gistemp/tabledata_v4/SH.Ts+dSST.csv",
+      "bytes": 12871,
+      "last_modified": "Tue, 10 Nov 2026 13:53:24 GMT",
+      "sha256": "64f83c63d7efceb3e9b89a7b4d1a74cc9439df748c8b1034980c562e880c5e7a"
+    },
+    "ZonAnn.Ts+dSST.csv": {
+      "description": "Annual means for 8 latitude bands (zonal)",
+      "url": "https://data.giss.nasa.gov/gistemp/tabledata_v4/ZonAnn.Ts+dSST.csv",
+      "bytes": 10185,
+      "last_modified": "Tue, 10 Nov 2026 13:53:24 GMT",
+      "sha256": "aed658e38791951f46f5d5a84554ba4f71e4fb5b569f90715429a261f40b8e21"
+    }
+  }
+}

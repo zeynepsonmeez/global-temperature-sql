@@ -1,0 +1,5 @@
+# Normalize line endings: store LF in the repository, let Git convert on checkout.
+* text=auto eol=lf
+
+# Raw NASA files are kept byte-for-byte as downloaded (their checksums are recorded).
+data/raw/*.csv -text
