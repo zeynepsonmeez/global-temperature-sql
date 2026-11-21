@@ -71,7 +71,7 @@ def main() -> int:
         print(f"OK     {name:<20} {len(content):>7,} bytes")
 
     manifest_path = RAW_DIR / "manifest.json"
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(f"Manifest written to {manifest_path.relative_to(RAW_DIR.parent.parent)}")
     return 0
 
