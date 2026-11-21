@@ -11,19 +11,10 @@ from i18n import lang, t
 from library import load_samples
 from sql_guard import check_query
 
-DEFAULT_SQL = """SELECT year,
-       ROUND(AVG(anomaly), 2) AS annual_anomaly
-FROM   v_monthly
-WHERE  region = 'GLB'
-GROUP  BY year
-HAVING COUNT(anomaly) = 12
-ORDER  BY annual_anomaly DESC
-LIMIT  10;"""
-
 samples = load_samples()
 sample_by_label = {s.label: s for s in samples}
 
-st.session_state.setdefault("pg_sql", DEFAULT_SQL)
+st.session_state.setdefault("pg_sql", "")          # the editor starts empty
 st.session_state.setdefault("pg_solved", set())
 if "pg_pending_sql" in st.session_state:          # arriving from "Open in Playground"
     st.session_state["pg_sql"] = st.session_state.pop("pg_pending_sql")
@@ -60,7 +51,8 @@ with left:
 # --- Center: editor and results --------------------------------------------------------------
 with center:
     st.caption(t("pg.badges", rows=MAX_ROWS))
-    sql = st.text_area(t("pg.editor"), key="pg_sql", height=300, label_visibility="collapsed")
+    sql = st.text_area(t("pg.editor"), key="pg_sql", height=300, label_visibility="collapsed",
+                       placeholder=t("pg.placeholder"))
     run = st.button(t("pg.run"), type="primary", icon=":material/play_arrow:")
 
     if run:

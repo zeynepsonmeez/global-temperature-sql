@@ -39,6 +39,13 @@ def test_explorer_shows_kpis_and_tabs():
     assert len(at.tabs) == 7
 
 
+def test_playground_starts_with_an_empty_editor():
+    at = open_page("views/playground.py")
+    assert at.text_area[0].value == ""
+    at.button[0].click().run()                      # running an empty editor
+    assert at.error and "empty" in at.error[0].value.lower()
+
+
 def test_playground_runs_a_query():
     at = open_page("views/playground.py")
     at.text_area[0].set_value("SELECT region, COUNT(*) AS n FROM v_monthly GROUP BY region ORDER BY region")

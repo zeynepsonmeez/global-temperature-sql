@@ -114,6 +114,10 @@ TEXT: dict[str, dict[str, str]] = {
     "pg.samples":          {"en": "Sample queries", "tr": "Örnek sorgular"},
     "pg.samples.pick":     {"en": "Load a sample query", "tr": "Örnek sorgu yükle"},
     "pg.editor":           {"en": "SQL query", "tr": "SQL sorgusu"},
+    "pg.placeholder":      {"en": "Write your SQL here, or load a sample query from the left…\n\n"
+                                  "Tables: v_monthly, v_annual, regions, datasets",
+                            "tr": "SQL sorgunuzu buraya yazın ya da soldan bir örnek sorgu yükleyin…\n\n"
+                                  "Tablolar: v_monthly, v_annual, regions, datasets"},
     "pg.badges":           {"en": "🔒 Read-only · ⏱ 3 s timeout · max {rows:,} rows",
                             "tr": "🔒 Salt okunur · ⏱ 3 sn zaman aşımı · en fazla {rows:,} satır"},
     "pg.run":              {"en": "Run query", "tr": "Çalıştır"},
