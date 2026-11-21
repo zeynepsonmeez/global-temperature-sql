@@ -125,6 +125,13 @@ def test_anomaly_column_accepts_null(cur):
     assert scalar(cur, "SELECT anomaly FROM monthly_anomalies WHERE year = 2999") is None
 
 
+@pytest.mark.parametrize("name", ["basic", "intermediate", "advanced"])
+def test_sql_library_runs(cur, name):
+    """Every query in sql/*.sql must keep running as the schema evolves."""
+    sql = (cd.ROOT / "sql" / f"{name}_queries.sql").read_text(encoding="utf-8")
+    cur.execute(sql)  # several statements in one call; raises on the first error
+
+
 def test_foreign_key_rejects_unknown_region(cur):
     with pytest.raises(psycopg.errors.ForeignKeyViolation):
         cur.execute(
