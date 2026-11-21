@@ -1,0 +1,27 @@
+# Fixed project name: containers, volumes and networks are always prefixed with it,
+# so this stack never mixes with other Compose projects on the same machine.
+name: global-temperature-sql
+
+services:
+  db:
+    image: postgres:17
+    container_name: gts-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      # Bind to localhost only: the database is not reachable from other machines.
+      # 5433 on the host (not the default 5432) to avoid clashing with other local PostgreSQL servers.
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
