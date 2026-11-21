@@ -1,10 +1,13 @@
 -- GlobalTemperatureSQL — database schema (PostgreSQL 17)
 -- Safe to re-run: drops and recreates every object in dependency order.
+-- CASCADE also drops the playground views built on top of these objects,
+-- so re-run database/roles.sql afterwards.
 
 BEGIN;
 
-DROP VIEW  IF EXISTS v_annual, v_monthly, v_latest_dataset;
-DROP TABLE IF EXISTS zonal_annual_anomalies, monthly_anomalies, regions, datasets;
+DROP SCHEMA IF EXISTS playground CASCADE;
+DROP VIEW  IF EXISTS v_annual, v_monthly, v_latest_dataset CASCADE;
+DROP TABLE IF EXISTS zonal_annual_anomalies, monthly_anomalies, regions, datasets CASCADE;
 
 -- ---------------------------------------------------------------------------
 -- datasets: one row per downloaded NASA snapshot (data versioning)

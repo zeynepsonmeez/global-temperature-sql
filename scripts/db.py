@@ -20,7 +20,7 @@ def connection_settings() -> dict[str, str]:
         "dbname": os.environ["POSTGRES_DB"],
         "user": os.environ["POSTGRES_USER"],
         "password": os.environ["POSTGRES_PASSWORD"],
-        "host": os.getenv("POSTGRES_HOST", "localhost"),
+        "host": os.getenv("POSTGRES_HOST", "127.0.0.1"),
         "port": os.getenv("POSTGRES_PORT", "5433"),
     }
 
