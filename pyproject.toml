@@ -1,0 +1,9 @@
+[project]
+name = "global-temperature-sql"
+version = "0.1.0"
+description = "An interactive SQL-powered platform for exploring NASA GISTEMP global temperature anomalies."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["scripts"]
