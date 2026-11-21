@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Throwaway credentials that exist only inside this CI job's database container.
+    env:
+      POSTGRES_DB: global_temperature
+      POSTGRES_USER: gts_admin
+      POSTGRES_PASSWORD: ci-only-admin-password
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5433"
+      POSTGRES_READER_USER: gts_reader
+      POSTGRES_READER_PASSWORD: ci-only-reader-password
+      PSQL_MODE: local
+
+    services:
+      db:
+        image: postgres:17
+        env:
+          POSTGRES_DB: global_temperature
+          POSTGRES_USER: gts_admin
+          POSTGRES_PASSWORD: ci-only-admin-password
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U gts_admin -d global_temperature"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build the database
+        run: python scripts/setup_database.py
+
+      # Uses the committed raw snapshot (data/raw) so results are reproducible.
+      - name: Clean and load data
+        run: |
+          python scripts/clean_data.py
+          python scripts/load_data.py
+
+      - name: Run tests
+        run: pytest -v
