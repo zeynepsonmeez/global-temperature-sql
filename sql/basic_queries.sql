@@ -76,3 +76,45 @@ GROUP  BY year
 HAVING COUNT(anomaly) = 12
    AND MIN(anomaly) >= 1.0
 ORDER  BY year;
+
+
+-- B7. The 10 coldest years (global) — same query as B2, ascending order
+SELECT year,
+       ROUND(AVG(anomaly), 2) AS annual_anomaly
+FROM   v_monthly
+WHERE  region = 'GLB'
+GROUP  BY year
+HAVING COUNT(anomaly) = 12
+ORDER  BY annual_anomaly ASC
+LIMIT  10;
+
+
+-- B8. When was the last month cooler than the 1951–1980 baseline? (global)
+-- MAX() over a filtered set answers "the most recent X" without sorting everything.
+SELECT MAX(obs_date)  AS last_month_below_baseline,
+       COUNT(*)       AS months_below_baseline_total
+FROM   v_monthly
+WHERE  region = 'GLB'
+  AND  anomaly < 0;
+
+
+-- B9. Number of months at or above +1.0 °C, per decade (global)
+-- Decades with zero such months do not appear: WHERE removes their rows before grouping.
+-- (intermediate_queries.sql I4 shows how FILTER keeps zero counts visible.)
+SELECT (year / 10) * 10 AS decade,
+       COUNT(*)         AS months_at_or_above_1c
+FROM   v_monthly
+WHERE  region = 'GLB'
+  AND  anomaly >= 1.0
+GROUP  BY decade
+ORDER  BY decade;
+
+
+-- B10. Northern latitude bands (LIKE pattern matching on the regions table)
+-- '%' matches any sequence of characters: '%N%' = "contains an N".
+SELECT code, name, kind, lat_min, lat_max
+FROM   regions
+WHERE  kind IN ('zonal', 'zonal_wide')
+  AND  code LIKE '%N%'
+  AND  lat_min >= 0
+ORDER  BY lat_max DESC, lat_min DESC;

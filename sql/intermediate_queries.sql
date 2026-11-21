@@ -107,3 +107,100 @@ WHERE  r.kind = 'zonal'
   AND  a.year > (SELECT MAX(year) - 10 FROM v_annual)
 GROUP  BY r.code, r.name, r.lat_min, r.lat_max
 ORDER  BY r.lat_max DESC;
+
+
+-- I6. Years with at least one month at or above +1.0 °C (EXISTS + correlated subquery)
+-- A correlated subquery refers to the outer row (y.year) and is evaluated per row.
+-- EXISTS stops at the first matching month, so it never counts more than needed.
+SELECT y.year,
+       (SELECT COUNT(*)
+        FROM   v_monthly m
+        WHERE  m.region = 'GLB' AND m.year = y.year AND m.anomaly >= 1.0) AS months_at_or_above_1c
+FROM  (SELECT DISTINCT year FROM v_monthly WHERE region = 'GLB') y
+WHERE  EXISTS (
+        SELECT 1
+        FROM   v_monthly m
+        WHERE  m.region = 'GLB' AND m.year = y.year AND m.anomaly >= 1.0
+       )
+ORDER  BY y.year;
+
+
+-- I7. The 5 hottest and 5 coldest years in one list (UNION ALL)
+-- Each branch needs its own parentheses to carry its own ORDER BY / LIMIT.
+-- UNION ALL keeps every row; UNION would also remove duplicates (extra work).
+WITH annual AS (
+    SELECT year, ROUND(AVG(anomaly), 2) AS anomaly
+    FROM   v_monthly
+    WHERE  region = 'GLB'
+    GROUP  BY year
+    HAVING COUNT(anomaly) = 12
+)
+(SELECT 'hottest' AS list, year, anomaly FROM annual ORDER BY anomaly DESC LIMIT 5)
+UNION ALL
+(SELECT 'coldest' AS list, year, anomaly FROM annual ORDER BY anomaly ASC  LIMIT 5);
+
+
+-- I8. Which regions have monthly data, which only annual? (LEFT JOIN + COALESCE)
+-- LEFT JOIN keeps every region even without a match; COALESCE turns the NULL count into 0.
+-- Counts are aggregated BEFORE joining: joining both raw tables first would multiply rows
+-- (every monthly row x every annual row of a region) and inflate the counts.
+SELECT r.code,
+       r.kind,
+       COALESCE(m.n, 0) AS monthly_rows,
+       COALESCE(a.n, 0) AS annual_rows
+FROM   regions r
+LEFT   JOIN (SELECT region, COUNT(*) AS n FROM v_monthly GROUP BY region) m ON m.region = r.code
+LEFT   JOIN (SELECT region, COUNT(*) AS n FROM v_annual  GROUP BY region) a ON a.region = r.code
+ORDER  BY r.lat_max DESC, r.lat_min DESC;
+
+
+-- I9. Re-baselining: recent years relative to 1880–1900 instead of 1951–1980
+-- Subtracting the mean of another period moves the zero point; trends do not change.
+-- 1880–1900 is only a proxy for "pre-industrial": the IPCC uses 1850–1900, which
+-- GISTEMP does not cover. One year above 1.5 °C is also not the same as passing the
+-- Paris Agreement limit, which refers to a ~20-year average.
+WITH annual AS (
+    SELECT year, AVG(anomaly) AS anomaly
+    FROM   v_monthly
+    WHERE  region = 'GLB'
+    GROUP  BY year
+    HAVING COUNT(anomaly) = 12
+),
+early AS (
+    SELECT AVG(anomaly) AS mean_1880_1900
+    FROM   annual
+    WHERE  year BETWEEN 1880 AND 1900
+)
+SELECT a.year,
+       ROUND(a.anomaly, 2)                     AS vs_1951_1980,
+       ROUND(a.anomaly - e.mean_1880_1900, 2)  AS vs_1880_1900
+FROM   annual a
+CROSS  JOIN early e
+WHERE  a.year >= 2015
+ORDER  BY a.year;
+
+
+-- I10. Winter (DJF) means computed in SQL — December belongs to the NEXT year's winter
+-- CASE shifts December forward one year, so Dec 2025 + Jan/Feb 2026 = winter 2026.
+-- This reproduces NASA's DJF column (e.g. 2026: (1.05 + 1.08 + 1.23) / 3 = 1.12).
+SELECT CASE WHEN month = 12 THEN year + 1 ELSE year END AS winter,
+       ROUND(AVG(anomaly), 2)                            AS djf_anomaly
+FROM   v_monthly
+WHERE  region = 'GLB'
+  AND  month IN (12, 1, 2)
+GROUP  BY winter
+HAVING COUNT(anomaly) = 3
+ORDER  BY winter DESC
+LIMIT  5;
+
+
+-- I11. The most recent 12 months per region (date arithmetic with INTERVAL)
+-- Works on obs_date, so it always uses the latest published data without hard-coded years.
+SELECT region,
+       to_char(MIN(obs_date), 'Mon YYYY') AS from_month,
+       to_char(MAX(obs_date), 'Mon YYYY') AS to_month,
+       ROUND(AVG(anomaly), 2)             AS last_12_months
+FROM   v_monthly
+WHERE  obs_date > (SELECT MAX(obs_date) FROM v_monthly) - INTERVAL '12 months'
+GROUP  BY region
+ORDER  BY region;
