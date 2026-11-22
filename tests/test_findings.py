@@ -5,30 +5,24 @@ finding changes, these tests fail until the README is updated — the text canno
 from the data. (Values refer to the committed NASA snapshot of 10 Nov 2026.)
 """
 
-import psycopg
 import pytest
 
-from db import get_connection
 from library import load_samples
 
 SAMPLES = {s.code: s.sql for s in load_samples()}
 
 
 @pytest.fixture(scope="module")
-def run():
-    try:
-        conn = get_connection()
-    except (psycopg.OperationalError, RuntimeError) as error:
-        pytest.skip(f"database not available: {error}")
-
+def run(admin_conn):
     def query(code: str) -> list[tuple]:
-        with conn.cursor() as cur:
-            cur.execute("SET search_path = public, postgis")
-            cur.execute(SAMPLES[code])
-            return cur.fetchall()
+        try:
+            with admin_conn.cursor() as cur:
+                cur.execute(SAMPLES[code])
+                return cur.fetchall()
+        finally:
+            admin_conn.rollback()            # a failing query must not poison the shared connection
 
-    yield query
-    conn.close()
+    return query
 
 
 def test_hottest_years_are_all_recent(run):

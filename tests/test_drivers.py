@@ -1,11 +1,9 @@
 """Tests for the ENSO / CO2 loader (files only) and the statistical model outputs (database)."""
 
 import pandas as pd
-import psycopg
 import pytest
 
 import load_drivers as ld
-from db import get_connection
 from library import load_samples
 
 # --- Loader: parsing and validation (no database) ----------------------------------------
@@ -45,25 +43,23 @@ def test_validation_catches_a_missing_month(oni, co2):
 # --- Model outputs (database, written by run_models.py) -------------------------------------
 
 @pytest.fixture(scope="module")
-def results():
+def results(admin_conn):
     try:
-        conn = get_connection()
-    except (psycopg.OperationalError, RuntimeError) as error:
-        pytest.skip(f"database not available: {error}")
-    with conn, conn.cursor() as cur:
-        cur.execute("SELECT to_regclass('model_results') IS NOT NULL")
-        if not cur.fetchone()[0]:
-            pytest.skip("drivers schema not installed")
-        cur.execute("SELECT metric, value, ci_low, ci_high FROM model_results")
-        rows = {m: (v, lo, hi) for m, v, lo, hi in cur.fetchall()}
-        if not rows:
-            pytest.skip("models not run (python scripts/run_models.py)")
-        cur.execute("SELECT count(*), max(abs(observed - enso_component - adjusted)) FROM model_enso_adjusted")
-        adjusted = cur.fetchone()
-        d3 = next(s for s in load_samples() if s.code == "D3")    # the lagged-correlation query
-        cur.execute(d3.sql)
-        lag_correlations = {lag: corr for lag, corr, _ in cur.fetchall()}
-    conn.close()
+        with admin_conn.cursor() as cur:
+            cur.execute("SELECT to_regclass('model_results') IS NOT NULL")
+            if not cur.fetchone()[0]:
+                pytest.skip("drivers schema not installed")
+            cur.execute("SELECT metric, value, ci_low, ci_high FROM model_results")
+            rows = {m: (v, lo, hi) for m, v, lo, hi in cur.fetchall()}
+            if not rows:
+                pytest.skip("models not run (python scripts/run_models.py)")
+            cur.execute("SELECT count(*), max(abs(observed - enso_component - adjusted)) FROM model_enso_adjusted")
+            adjusted = cur.fetchone()
+            d3 = next(s for s in load_samples() if s.code == "D3")    # the lagged-correlation query
+            cur.execute(d3.sql)
+            lag_correlations = {lag: corr for lag, corr, _ in cur.fetchall()}
+    finally:
+        admin_conn.rollback()
     return {"metrics": rows, "adjusted": adjusted, "lag_correlations": lag_correlations}
 
 
