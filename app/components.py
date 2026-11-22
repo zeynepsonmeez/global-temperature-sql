@@ -56,6 +56,55 @@ def page_style() -> None:
     )
 
 
+# Streamlit offers System / Light / Dark in its main menu but always starts on "System",
+# with no config option to change that. It remembers the choice in localStorage under a
+# key PER PAGE PATH. This watcher (one per browser tab) checks once a second:
+#   * a page path seen for the first time -> give it the visitor's preferred theme
+#     (Light unless they picked another one) and reload only if it shows the other theme;
+#   * otherwise -> record the theme the visitor picked, so every page follows it.
+# Polling is needed because the menu changes localStorage without a 'storage' event in the
+# same tab, and switching pages in the app does not re-run page scripts.
+_THEME_SCRIPT = """
+<script>
+(() => {
+  const W = window.parent;
+  if (W.__gtsThemeWatcher) return;
+  W.__gtsThemeWatcher = true;
+  const ls = W.localStorage, PREF = "gts-theme-pref";
+  const showingDark = () => {
+    const app = W.document.querySelector('[data-testid="stApp"]');
+    if (!app) return false;
+    const [r, g, b] = getComputedStyle(app).backgroundColor.match(/\\d+/g).map(Number);
+    return (r + g + b) / 3 < 128;
+  };
+  const tick = () => {
+    const path = W.location.pathname;
+    const key = `stActiveTheme-${path}-v2`, flag = `gts-theme-init-${path}`;
+    if (!ls.getItem(flag)) {
+      const pref = ls.getItem(PREF) || '"Light"';
+      ls.setItem(key, pref);
+      ls.setItem(flag, "1");
+      if ((pref === '"Light"' && showingDark()) || (pref === '"Dark"' && !showingDark())) W.location.reload();
+      return;
+    }
+    const current = ls.getItem(key);
+    if (current && current !== ls.getItem(PREF)) ls.setItem(PREF, current);
+  };
+  tick();
+  W.setInterval(tick, 1000);
+})();
+</script>
+"""
+
+
+def default_light_theme() -> None:
+    try:
+        st.html(_THEME_SCRIPT, unsafe_allow_javascript=True)
+    except TypeError:                     # older Streamlit without unsafe_allow_javascript
+        import streamlit.components.v1 as components
+        components.html(_THEME_SCRIPT, height=0)
+
+
 def style_figure(fig: go.Figure, height: int = 420, y_title: str = "°C") -> go.Figure:
     fig.update_layout(
         height=height,

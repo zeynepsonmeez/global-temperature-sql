@@ -6,7 +6,7 @@ Run from the project root:
 
 import streamlit as st
 
-from components import page_style
+from components import default_light_theme, page_style
 from database import database_available
 from i18n import language_toggle, t
 
@@ -16,6 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 page_style()
+default_light_theme()
 language_toggle()
 
 if not database_available():

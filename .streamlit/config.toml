@@ -1,5 +1,6 @@
-# Two themes: the app follows the visitor's system setting, and either can be picked
-# from the Settings menu. Accent colours are tuned per theme for contrast.
+# Two themes, picked from the main menu (⋮). Light is the default: Streamlit itself starts
+# on "System", so app/components.py sets "Light" on a visitor's first visit (see default_light_theme).
+# Accent colours are tuned per theme for contrast.
 
 [theme]
 font = "sans serif"
