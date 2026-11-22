@@ -12,7 +12,7 @@
 WITH yearly AS (
     SELECT EXTRACT(YEAR FROM obs_date)::int AS year, MAX(oni) AS max_oni, MIN(oni) AS min_oni
     FROM   v_enso
-    GROUP  BY 1
+    GROUP  BY EXTRACT(YEAR FROM obs_date)
 )
 (SELECT 'El Nino' AS event, year, max_oni AS peak_oni FROM yearly ORDER BY max_oni DESC LIMIT 5)
 UNION ALL
@@ -65,7 +65,7 @@ fit AS (
     SELECT regr_slope(anomaly, t) AS slope, regr_intercept(anomaly, t) AS intercept FROM temp
 ),
 detrended AS (
-    SELECT obs_date, anomaly - (slope * t + intercept) AS departure
+    SELECT temp.obs_date, temp.anomaly - (fit.slope * temp.t + fit.intercept) AS departure
     FROM   temp CROSS JOIN fit
 )
 SELECT k                                           AS lag_months,
@@ -101,7 +101,7 @@ LIMIT  8;
 WITH annual AS (
     SELECT EXTRACT(YEAR FROM obs_date)::int AS year, AVG(co2_ppm) AS co2
     FROM   v_co2
-    GROUP  BY 1
+    GROUP  BY EXTRACT(YEAR FROM obs_date)
     HAVING COUNT(*) = 12
 ),
 growth AS (
@@ -125,9 +125,9 @@ SELECT t.threshold_ppm,
      - LAG(EXTRACT(YEAR FROM f.first_month)) OVER (ORDER BY t.threshold_ppm) AS years_after_previous
 FROM  (VALUES (350), (400), (420)) AS t(threshold_ppm)
 CROSS JOIN LATERAL (
-        SELECT MIN(obs_date) AS first_month
-        FROM   v_co2
-        WHERE  co2_deseason >= t.threshold_ppm
+        SELECT MIN(c.obs_date) AS first_month
+        FROM   v_co2 c
+        WHERE  c.co2_deseason >= t.threshold_ppm
       ) f
 ORDER BY t.threshold_ppm;
 
@@ -158,7 +158,7 @@ WITH annual AS (
            AVG(enso_component) AS enso_part,
            AVG(adjusted)       AS adjusted
     FROM   model_enso_adjusted
-    GROUP  BY 1
+    GROUP  BY EXTRACT(YEAR FROM obs_date)
     HAVING COUNT(*) = 12
 )
 SELECT year,

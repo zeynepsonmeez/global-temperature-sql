@@ -22,9 +22,9 @@ SELECT year,
        anomaly,
        RANK()       OVER (ORDER BY anomaly DESC) AS rank,
        DENSE_RANK() OVER (ORDER BY anomaly DESC) AS dense_rank,
-       ROW_NUMBER() OVER (ORDER BY anomaly DESC, year) AS row_number
+       ROW_NUMBER() OVER (ORDER BY anomaly DESC, year ASC) AS row_number
 FROM   annual
-ORDER  BY anomaly DESC, year
+ORDER  BY anomaly DESC, year ASC
 LIMIT  8;
 
 
@@ -195,7 +195,7 @@ SELECT to_char(obs_date, 'Mon YYYY')  AS month,
        rank_for_month,
        ROUND(percentile::numeric, 3)  AS percentile
 FROM   ranked
-WHERE  obs_date > (SELECT MAX(obs_date) FROM v_monthly) - INTERVAL '12 months'
+WHERE  obs_date > (SELECT MAX(latest.obs_date) FROM v_monthly latest) - INTERVAL '12 months'
 ORDER  BY obs_date;
 
 
@@ -265,9 +265,9 @@ SELECT t.threshold,
        f.first_year - LAG(f.first_year) OVER (ORDER BY t.threshold) AS years_after_previous
 FROM   generate_series(0.2, 1.2, 0.2) AS t(threshold)
 CROSS  JOIN LATERAL (
-        SELECT MIN(year) AS first_year
-        FROM   annual
-        WHERE  anomaly >= t.threshold
+        SELECT MIN(a.year) AS first_year
+        FROM   annual a
+        WHERE  a.anomaly >= t.threshold
        ) f
 ORDER  BY t.threshold;
 

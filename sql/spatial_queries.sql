@@ -65,8 +65,8 @@ WITH istanbul AS (
 )
 SELECT v.obs_date, v.anomaly
 FROM   v_grid v
-JOIN   istanbul i USING (cell_id)
-WHERE  v.obs_date > (SELECT MAX(obs_date) FROM v_monthly) - INTERVAL '12 months'
+JOIN   istanbul USING (cell_id)
+WHERE  v.obs_date > (SELECT MAX(m.obs_date) FROM v_monthly m) - INTERVAL '12 months'
 ORDER  BY v.obs_date;
 
 
@@ -117,7 +117,7 @@ ORDER  BY rate_per_decade DESC;
 WITH latest AS (
     SELECT cell_id, anomaly
     FROM   v_grid
-    WHERE  obs_date = (SELECT MAX(obs_date) FROM v_monthly)
+    WHERE  obs_date = (SELECT MAX(m.obs_date) FROM v_monthly m)
     ORDER  BY anomaly DESC
     LIMIT  10
 ),
@@ -125,8 +125,8 @@ main_country AS (
     SELECT DISTINCT ON (cc.cell_id) cc.cell_id, c.name
     FROM   cell_countries cc
     JOIN   countries c USING (country_id)
-    WHERE  cc.cell_id IN (SELECT cell_id FROM latest)
-    ORDER  BY cc.cell_id, cc.overlap_km2 DESC
+    WHERE  cc.cell_id IN (SELECT l.cell_id FROM latest l)
+    ORDER  BY cc.cell_id ASC, cc.overlap_km2 DESC
 )
 SELECT g.lat, g.lon, l.anomaly, COALESCE(m.name, '(ocean)') AS country
 FROM   latest l

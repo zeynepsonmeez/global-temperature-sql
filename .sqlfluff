@@ -1,0 +1,26 @@
+[sqlfluff]
+dialect = postgres
+templater = placeholder
+max_line_length = 130
+# Layout rules are off on purpose: the library aligns clauses and columns by hand
+# ("FROM   v_monthly") to make the queries easier to read while learning.
+# Style choices of this library, documented rather than enforced:
+#   AL01  table aliases may be written with or without AS
+#   RF04  "year" and "month" are natural column names in this data set
+#   CP03  function names mix conventions by nature (AVG, regr_slope, ST_Area)
+#   CP05  casts are lower case (::numeric), INTERVAL literals upper case by convention
+#   AM05  plain JOIN for inner joins
+#   ST05  derived tables in FROM are taught on purpose next to CTEs
+#   ST06  column order follows the question, not "simple columns first"
+#   ST07  USING is used for same-named keys
+#   ST09  join condition order is not enforced
+exclude_rules = layout, AL01, RF04, CP03, CP05, AM05, ST05, ST06, ST07, ST09
+
+[sqlfluff:templater:placeholder]
+param_style = pyformat
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.literals]
+capitalisation_policy = upper

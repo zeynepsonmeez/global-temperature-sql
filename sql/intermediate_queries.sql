@@ -49,9 +49,9 @@ WHERE  region = 'GLB'
 GROUP  BY year
 HAVING COUNT(anomaly) = 12
    AND AVG(anomaly) > (
-        SELECT AVG(anomaly)
-        FROM   v_monthly
-        WHERE  region = 'GLB' AND year = 2016
+        SELECT AVG(ref.anomaly)
+        FROM   v_monthly ref
+        WHERE  ref.region = 'GLB' AND ref.year = 2016
    )
 ORDER  BY year;
 
@@ -104,7 +104,7 @@ SELECT r.code,
 FROM   v_annual a
 JOIN   regions  r ON r.code = a.region
 WHERE  r.kind = 'zonal'
-  AND  a.year > (SELECT MAX(year) - 10 FROM v_annual)
+  AND  a.year > (SELECT MAX(latest.year) - 10 FROM v_annual latest)
 GROUP  BY r.code, r.name, r.lat_min, r.lat_max
 ORDER  BY r.lat_max DESC;
 
@@ -201,6 +201,6 @@ SELECT region,
        to_char(MAX(obs_date), 'Mon YYYY') AS to_month,
        ROUND(AVG(anomaly), 2)             AS last_12_months
 FROM   v_monthly
-WHERE  obs_date > (SELECT MAX(obs_date) FROM v_monthly) - INTERVAL '12 months'
+WHERE  obs_date > (SELECT MAX(latest.obs_date) FROM v_monthly latest) - INTERVAL '12 months'
 GROUP  BY region
 ORDER  BY region;
