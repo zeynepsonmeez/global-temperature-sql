@@ -67,5 +67,11 @@ jobs:
           [ -f data/raw/grid/ne_50m_admin_0_countries.geojson ] || python scripts/download_grid.py
           python scripts/load_grid.py --start-year 2015
 
+      # ENSO and CO2 files are small and committed (data/raw/drivers).
+      - name: Load climate drivers and run the statistical models
+        run: |
+          python scripts/load_drivers.py
+          python scripts/run_models.py
+
       - name: Run tests
         run: pytest -v
