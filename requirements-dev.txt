@@ -1,0 +1,7 @@
+# Everything in requirements.txt plus linters, git hooks and coverage.
+-r requirements.txt
+coverage==7.17.4
+pre-commit==4.7.0
+pytest-cov==7.1.0
+ruff==0.17.6
+sqlfluff==4.5.0

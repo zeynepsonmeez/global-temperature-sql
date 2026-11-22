@@ -6,6 +6,25 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install linters
+        run: pip install ruff==0.17.6 sqlfluff==4.5.0
+
+      - name: Python (ruff)
+        run: ruff check --output-format=github .
+
+      - name: SQL library (sqlfluff)
+        run: sqlfluff lint sql/ --format github-annotation-native
+
   test:
     runs-on: ubuntu-latest
 
@@ -19,6 +38,7 @@ jobs:
       POSTGRES_READER_USER: gts_reader
       POSTGRES_READER_PASSWORD: ci-only-reader-password
       PSQL_MODE: local
+      PYTHONIOENCODING: utf-8
 
     services:
       db:
@@ -44,16 +64,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Build the database
-        run: python scripts/setup_database.py
-
-      # Uses the committed raw snapshot (data/raw) so results are reproducible.
-      - name: Clean and load data
-        run: |
-          python scripts/clean_data.py
-          python scripts/load_data.py
+        run: pip install -r requirements-dev.txt
 
       - name: Cache grid downloads
         uses: actions/cache@v4
@@ -61,17 +72,25 @@ jobs:
           path: data/raw/grid
           key: grid-${{ hashFiles('data/raw/grid/manifest.json') }}
 
-      # The full grid is ~25M rows; CI loads 2015 onwards to exercise the same code quickly.
-      - name: Download and load the spatial grid (subset)
+      # Every pipeline script runs under coverage, so the report covers the code that
+      # builds the data, not only the code the tests call.
+      - name: Build the database and run the pipeline
         run: |
+          coverage run -p scripts/setup_database.py
+          coverage run -p scripts/clean_data.py         # committed NASA snapshot: reproducible
+          coverage run -p scripts/load_data.py
           [ -f data/raw/grid/ne_50m_admin_0_countries.geojson ] || python scripts/download_grid.py
-          python scripts/load_grid.py --start-year 2015
-
-      # ENSO and CO2 files are small and committed (data/raw/drivers).
-      - name: Load climate drivers and run the statistical models
-        run: |
-          python scripts/load_drivers.py
-          python scripts/run_models.py
+          coverage run -p scripts/load_grid.py --start-year 2015   # ~25M rows in full; a subset here
+          coverage run -p scripts/load_drivers.py
+          coverage run -p scripts/run_models.py
 
       - name: Run tests
-        run: pytest -v
+        run: |
+          coverage combine
+          pytest -v --cov --cov-append --cov-report=
+
+      - name: Coverage report
+        run: |
+          coverage combine || true
+          coverage report --fail-under=85
+          coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"

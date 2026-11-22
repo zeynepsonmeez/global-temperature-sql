@@ -1,0 +1,33 @@
+# Checks that run on every `git commit` (install once: pre-commit install).
+# Raw data files are excluded: they must stay byte-for-byte identical to the
+# downloads, because their SHA-256 checksums are recorded in the manifests.
+exclude: ^data/
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: detect-private-key
+
+  # Ruff and sqlfluff run from the project's own environment (requirements-dev.txt),
+  # so the hooks use exactly the pinned versions that CI uses.
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff (Python lint)
+        entry: ruff check --fix
+        language: system
+        types: [python]
+
+      - id: sqlfluff
+        name: sqlfluff (SQL library lint)
+        entry: sqlfluff lint
+        language: system
+        files: ^sql/.*\.sql$

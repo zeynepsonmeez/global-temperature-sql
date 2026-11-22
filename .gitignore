@@ -2,6 +2,10 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ruff_cache/
 .ipynb_checkpoints/
 
 # --- Virtual environment ---
