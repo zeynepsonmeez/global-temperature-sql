@@ -99,4 +99,4 @@ def test_reader_can_use_postgis_through_the_playground(grid_cur):
                           WHERE ST_Contains(geom, ST_SetSRID(ST_MakePoint(32.86, 39.93), 4326))""")
         assert reader.fetchone()[0] == "Turkey"
         reader.execute("SELECT count(*) FROM v_country_annual WHERE adm0_a3 = 'TUR'")
-        assert reader.fetchone()[0] > 100
+        assert reader.fetchone()[0] >= 10            # 146 years in full; 11 in CI (grid from 2015)

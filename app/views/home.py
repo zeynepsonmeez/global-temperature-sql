@@ -3,7 +3,6 @@
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
-import streamlit.components.v1 as components
 
 import queries as q
 from components import COAST, GRID, LAND, OCEAN, WARM_SCALE, footer
@@ -54,8 +53,8 @@ def globe_figure() -> go.Figure:
 
 # Spins the globe slowly until the visitor touches it (click, drag, touch or scroll); a small
 # button pauses or resumes it. Visitors who ask the system for reduced motion start paused.
-# st.plotly_chart cannot animate on its own, so the figure is rendered as a small HTML
-# component and rotated through Plotly.relayout.
+# st.plotly_chart cannot animate on its own, so the figure is rendered as a small HTML page
+# in st.iframe and rotated through Plotly.relayout.
 _SPIN_SCRIPT = """
 <style>
   html, body { margin: 0; background: transparent; }
@@ -97,7 +96,7 @@ def render_globe(fig: go.Figure) -> None:
                         config={"displayModeBar": False, "responsive": True})
     script = _SPIN_SCRIPT.replace("__PAUSE__", t("home.globe.pause")).replace("__PLAY__", t("home.globe.play"))
     html = f'<div class="wrap"><button id="globe-toggle" type="button"></button>{chart}</div>{script}'
-    components.html(html, height=370)
+    st.iframe(html, height=370)
 
 
 hero, globe = st.columns([1.3, 1], gap="large", vertical_alignment="center")
