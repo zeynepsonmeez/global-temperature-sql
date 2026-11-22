@@ -1,0 +1,202 @@
+{
+  "generated_at": "2026-11-22T14:34:53+00:00",
+  "runs_per_query": 5,
+  "queries": {
+    "Q1_month_map": "One month, every cell (the data behind a map)",
+    "Q2_global_mean_5y": "Area-weighted global mean per year, 2020–2024",
+    "Q3_one_cell_series": "Full monthly history of one cell (Ankara)",
+    "Q4_country_series": "Türkiye: monthly area-weighted series from the raw grid"
+  },
+  "strategies": [
+    {
+      "name": "flat_no_index",
+      "description": "Flat table, no index",
+      "queries": {
+        "Q1_month_map": {
+          "median_ms": 349.75,
+          "min_ms": 313.98,
+          "scan": "Seq Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 112640
+        },
+        "Q2_global_mean_5y": {
+          "median_ms": 465.68,
+          "min_ms": 461.69,
+          "scan": "Seq Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 112640
+        },
+        "Q3_one_cell_series": {
+          "median_ms": 348.4,
+          "min_ms": 324.8,
+          "scan": "Seq Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 112640
+        },
+        "Q4_country_series": {
+          "median_ms": 1068.84,
+          "min_ms": 1058.67,
+          "scan": "Seq Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 112640
+        }
+      }
+    },
+    {
+      "name": "flat_btree_date",
+      "description": "Flat + B-tree (obs_date)",
+      "queries": {
+        "Q1_month_map": {
+          "median_ms": 2.23,
+          "min_ms": 2.19,
+          "scan": "Index Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 88
+        },
+        "Q2_global_mean_5y": {
+          "median_ms": 212.47,
+          "min_ms": 197.41,
+          "scan": "Index Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 5880
+        },
+        "Q3_one_cell_series": {
+          "median_ms": 425.18,
+          "min_ms": 349.94,
+          "scan": "Seq Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 112640
+        },
+        "Q4_country_series": {
+          "median_ms": 1045.81,
+          "min_ms": 966.5,
+          "scan": "Seq Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 112640
+        }
+      },
+      "index_build_s": 4.1,
+      "index_size_bytes": 177160192
+    },
+    {
+      "name": "flat_brin_date",
+      "description": "Flat + BRIN (obs_date)",
+      "queries": {
+        "Q1_month_map": {
+          "median_ms": 2.89,
+          "min_ms": 2.75,
+          "scan": "Bitmap Heap Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 132
+        },
+        "Q2_global_mean_5y": {
+          "median_ms": 222.6,
+          "min_ms": 208.15,
+          "scan": "Bitmap Heap Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 4356
+        },
+        "Q3_one_cell_series": {
+          "median_ms": 437.02,
+          "min_ms": 380.49,
+          "scan": "Seq Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 112640
+        },
+        "Q4_country_series": {
+          "median_ms": 1134.85,
+          "min_ms": 1022.28,
+          "scan": "Seq Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 112640
+        }
+      },
+      "index_build_s": 1.2,
+      "index_size_bytes": 40960
+    },
+    {
+      "name": "flat_btree_cell_date",
+      "description": "Flat + B-tree (cell_id, obs_date)",
+      "queries": {
+        "Q1_month_map": {
+          "median_ms": 322.12,
+          "min_ms": 282.62,
+          "scan": "Seq Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 112640
+        },
+        "Q2_global_mean_5y": {
+          "median_ms": 536.7,
+          "min_ms": 484.44,
+          "scan": "Index Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 1015987
+        },
+        "Q3_one_cell_series": {
+          "median_ms": 0.78,
+          "min_ms": 0.7,
+          "scan": "Index Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 1769
+        },
+        "Q4_country_series": {
+          "median_ms": 37.4,
+          "min_ms": 34.61,
+          "scan": "Index Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 63713
+        }
+      },
+      "index_build_s": 9.5,
+      "index_size_bytes": 571629568
+    },
+    {
+      "name": "partitioned",
+      "description": "Partitioned by decade + PK (cell_id, obs_date) + BRIN — production",
+      "queries": {
+        "Q1_month_map": {
+          "median_ms": 2.42,
+          "min_ms": 2.28,
+          "scan": "Bitmap Heap Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 130
+        },
+        "Q2_global_mean_5y": {
+          "median_ms": 212.3,
+          "min_ms": 198.08,
+          "scan": "Bitmap Heap Scan",
+          "partitions_read": 1,
+          "shared_buffers_read": 4354
+        },
+        "Q3_one_cell_series": {
+          "median_ms": 1.36,
+          "min_ms": 1.05,
+          "scan": "Index Scan",
+          "partitions_read": 16,
+          "shared_buffers_read": 1813
+        },
+        "Q4_country_series": {
+          "median_ms": 41.56,
+          "min_ms": 38.66,
+          "scan": "Index Scan",
+          "partitions_read": 16,
+          "shared_buffers_read": 65220
+        }
+      }
+    }
+  ],
+  "materialized_view": {
+    "description": "Türkiye: annual series from the materialized view",
+    "median_ms": 0.1,
+    "min_ms": 0.09,
+    "scan": "-",
+    "partitions_read": 0,
+    "shared_buffers_read": 0
+  },
+  "postgres": "PostgreSQL 17.11 (Debian 17.11-1.pgdg13+2)",
+  "flat_table": {
+    "build_s": 17.6,
+    "size_bytes": 922746880
+  },
+  "rows": 25448605
+}
