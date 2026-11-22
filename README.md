@@ -38,7 +38,7 @@ Newey-West confidence intervals side by side. Methods: [`docs/METHODS.md`](docs/
 
 **SQL Playground** — write and run read-only SQL against the real database (including PostGIS
 functions): schema browser, 78 sample queries (basic → advanced → spatial → drivers), result table with
-timing, CSV export, quick charts and five **challenges** checked automatically against a
+timing, CSV export, quick charts, an EXPLAIN cost gate and 15 **challenges** checked automatically against a
 reference query.
 
 **Home** — a rotatable globe coloured by the warming of each latitude band, dataset facts and
@@ -138,7 +138,7 @@ python scripts/run_models.py           # regression, ENSO-adjusted series, break
 
 # 5. Run
 streamlit run app/main.py              # http://localhost:8501
-pytest                                 # 437 test cases
+pytest                                 # 544 test cases
 python scripts/benchmark.py            # optional: re-run the performance study
 ```
 
@@ -194,7 +194,9 @@ Every query is commented, available in the Playground and runs in CI.
 
 The Playground has two independent layers: a sqlglot-based validator and a PostgreSQL role that
 can only read the playground views and PostGIS functions, cannot write or create anything, and
-is stopped after 3 seconds. See [`docs/SECURITY.md`](docs/SECURITY.md).
+is stopped after 3 seconds. Between them, an **EXPLAIN cost gate** refuses queries whose planner
+estimate is too high before they run, and results stream through a server-side cursor.
+See [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ## Code quality
 
@@ -220,14 +222,14 @@ is stopped after 3 seconds. See [`docs/SECURITY.md`](docs/SECURITY.md).
 | `test_run_models.py` | 5 | Newey-West bandwidth, breakpoint recovered from a synthetic series, lag alignment |
 | `test_sql_guard.py` | 57 | 40 attack queries blocked, harmless edge cases and all library queries allowed |
 | `test_reader_role.py` | 10 | Database-level protection without the validator |
-| `test_errors.py` | 9 | Real PostgreSQL errors mapped to plain explanations, 3 s timeout, row limit |
+| `test_errors.py` | 92 | Every library query run as the read-only role through the cost gate; expensive queries refused before running; plain error messages, timeout, streaming row limit |
 | `test_queries.py` | 56 | Static checks on the app's SQL (placeholders) |
 | `test_helpers.py` | 14 | SQL literal quoting, library numbering, psql command (password never on the command line) |
-| `test_challenges.py` | 15 | Challenge references and the answer checker |
-| `test_i18n.py` | 191 | Every text in EN and TR, matching placeholders, every key used in the code exists |
-| `test_app.py` | 16 | Every page renders in both languages; Playground runs and blocks queries |
+| `test_challenges.py` | 35 | Challenge references and the answer checker |
+| `test_i18n.py` | 194 | Every text in EN and TR, matching placeholders, every key used in the code exists |
+| `test_app.py` | 17 | Every page renders in both languages; Playground runs and blocks queries |
 
-**437 test cases from 95 test functions** — many are parametrised (for example one case per
+**544 test cases from 100 test functions** — many are parametrised (for example one case per
 translation key or per attack query).
 
 GitHub Actions runs two jobs on every push: **lint** (ruff, sqlfluff) and **test**, which builds
