@@ -174,6 +174,56 @@ SELECT (SELECT MAX(obs_date) FROM v_monthly WHERE region = 'GLB' AND anomaly < 0
        (SELECT COUNT(*) FROM (SELECT year FROM annual ORDER BY anomaly DESC LIMIT 10) t
         WHERE year >= 2015)                                                         AS top10_since_2015;"""
 
+# --- Spatial (PostGIS grid and countries) ------------------------------------------------
+
+COUNTRY_RATES = """-- Warming rate of every country over the selected years (for the world map)
+-- coverage >= 0.9: only years in which at least 90 percent of the country had data.
+SELECT COALESCE(iso_a3, adm0_a3)                             AS iso3,
+       country,
+       continent,
+       ROUND((regr_slope(anomaly, year) * 10)::numeric, 3)  AS rate_per_decade,
+       ROUND(AVG(anomaly) FILTER (WHERE year > %(end)s - 10)::numeric, 2) AS mean_last_10y,
+       COUNT(*)                                              AS years
+FROM   v_country_annual
+WHERE  year BETWEEN %(start)s AND %(end)s
+  AND  coverage >= 0.9
+GROUP  BY iso3, country, continent
+HAVING COUNT(*) >= 0.8 * (%(end)s - %(start)s + 1)
+ORDER  BY rate_per_decade DESC;"""
+
+GRID_YEAR = """-- Annual mean anomaly of every 2°x2° cell in one year
+SELECT g.lat, g.lon, ROUND(a.anomaly::numeric, 2) AS anomaly
+FROM   v_grid_annual a
+JOIN   grid_cells    g USING (cell_id)
+WHERE  a.year = %(year)s;"""
+
+GRID_YEARS = """SELECT MIN(year) AS first_year, MAX(year) AS last_year FROM v_grid_annual;"""
+
+COUNTRY_LIST = """-- Countries with a well-covered series since 1970
+SELECT adm0_a3, country
+FROM   v_country_annual
+WHERE  year >= 1970 AND coverage >= 0.9
+GROUP  BY adm0_a3, country
+HAVING COUNT(*) >= 40
+ORDER  BY country;"""
+
+COUNTRY_SERIES = """-- One country's annual anomaly next to the global mean
+WITH global AS (
+    SELECT year, AVG(anomaly) AS anomaly
+    FROM   v_monthly
+    WHERE  region = 'GLB'
+    GROUP  BY year
+    HAVING COUNT(anomaly) = 12
+)
+SELECT c.year,
+       ROUND(c.anomaly::numeric, 2)  AS country,
+       ROUND(g.anomaly, 2)           AS global,
+       ROUND(c.coverage::numeric, 2) AS coverage
+FROM   v_country_annual c
+JOIN   global g USING (year)
+WHERE  c.adm0_a3 = %(country)s
+ORDER  BY c.year;"""
+
 SCHEMA = """SELECT table_name, column_name, data_type
 FROM   information_schema.columns
 WHERE  table_schema = 'playground'

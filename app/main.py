@@ -26,6 +26,7 @@ if not database_available():
 pages = [
     st.Page("views/home.py", title=t("nav.home"), icon=":material/public:", default=True),
     st.Page("views/explorer.py", title=t("nav.explorer"), icon=":material/monitoring:"),
+    st.Page("views/map.py", title=t("nav.map"), icon=":material/map:"),
     st.Page("views/playground.py", title=t("nav.playground"), icon=":material/terminal:"),
 ]
 st.navigation(pages, position="top").run()

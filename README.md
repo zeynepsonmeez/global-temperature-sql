@@ -2,13 +2,15 @@
 
 **Query the Data. Understand the Climate.**
 
-An interactive SQL-powered platform for exploring and analyzing historical global temperature
-anomalies using NASA GISTEMP v4 data — a PostgreSQL database, a library of 37 SQL analyses,
-a Streamlit app with interactive charts, and a secure SQL Playground.
+An interactive SQL-powered platform for exploring historical global temperature anomalies from
+NASA GISTEMP v4 — a PostgreSQL/PostGIS database with **25 million gridded observations**, a
+library of 47 SQL analyses, a measured indexing and partitioning study, a Streamlit app with
+interactive maps and charts, and a secure SQL Playground.
 
 ![CI](https://github.com/OWNER/global-temperature-sql/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.13-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791)
+![PostGIS](https://img.shields.io/badge/PostGIS-3.6-5a8f29)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
@@ -20,13 +22,19 @@ moving average): global trend, hottest years, decades, hemispheres, monthly heat
 record tracker and warming by latitude band. Every chart has a **"SQL behind this chart"**
 panel and can be opened in the Playground with one click.
 
-**SQL Playground** — write and run read-only SQL against the real database: schema browser,
-37 sample queries (basic → advanced), result table with timing, CSV export, quick charts and
-five **challenges** whose answers are checked automatically against a reference query.
+**Warming Map** — built on NASA's 2°×2° grid in PostGIS: a country choropleth of warming
+rates for any period, the full grid for any year since 1880, and a page for every country
+compared with the global mean. Country series are area-weighted from the grid cells inside
+each border.
+
+**SQL Playground** — write and run read-only SQL against the real database (including PostGIS
+functions): schema browser, 47 sample queries (basic → advanced → spatial), result table with
+timing, CSV export, quick charts and five **challenges** checked automatically against a
+reference query.
 
 **Home** — a rotatable globe coloured by the warming of each latitude band, dataset facts and
-headline findings computed live from the database. The interface is available in
-**English and Turkish**.
+headline findings computed live. Interface in **English and Turkish**; light theme by default,
+dark theme in the menu.
 
 ## Findings
 
@@ -38,33 +46,52 @@ Computed by the queries in [`sql/`](sql/) on the NASA snapshot of 10 Nov 2026
 | The 10 hottest years all occurred in **2015 or later**; 2024 is the hottest (+1.28 °C). | B2 |
 | No month has been cooler than the 1951–1980 average since **September 1992**. | B8 |
 | **41 consecutive months** at or above +1.0 °C (June 2023 – October 2026); the previous longest run was 7. | A10 |
-| Since 2000 there has not been a single year near the baseline; 5 years were "extreme" (≥ +1.0 °C). | I4 |
 | Global warming rate since 1970: **+0.20 °C per decade** (R² = 0.91), about 2.5× the long-term rate. | A6 |
 | The **Arctic** (64°N–90°N) has warmed **3× faster** than the globe since 1970. | A7 |
+| Since 1970, **land has warmed twice as fast as the ocean** (0.29 vs 0.15 °C per decade). | S6 |
+| **Türkiye** has warmed **+0.44 °C per decade** since 1970 — 2.2× the global rate; 2024 was +2.57 °C. | S2, map |
 | The hemisphere gap grew from 0.06 °C (1990s) to **0.61 °C** (2020s): the land-rich North warms faster. | I2 |
 | Relative to 1880–1900, 2024 reached about +1.50 °C (a single year, not the Paris 20-year average). | I9 |
+
+## Performance study
+
+How do you index 25 million rows that are queried by date (maps), by cell (local series) and
+by country (spatial joins)? [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) measures five
+strategies with `EXPLAIN (ANALYZE, BUFFERS)`:
+
+| | No index | Best single index | Production design |
+|---|---:|---:|---:|
+| One month, all cells | 350 ms | 2.2 ms (B-tree date) | 2.4 ms |
+| One cell, all months | 348 ms | 0.8 ms (B-tree cell, date) | 1.4 ms |
+| One country, from the raw grid | 1,069 ms | 37 ms | 42 ms → **0.1 ms** with a materialized view |
+
+Key lessons: column order decides which queries an index can serve; a **BRIN index** matches a
+B-tree on date-ordered data at **1/4,000 of the size** (40 KB vs 169 MB); partitioning by decade
+prunes date queries to one partition; pre-aggregation beats any index. The production design —
+decade partitions + `(cell_id, obs_date)` primary key + BRIN + materialized views — is the only
+one fast on every query shape.
 
 ## Architecture
 
 ```text
- NASA GISTEMP CSV ──► download_data.py ──► data/raw/ (+ manifest.json: date, SHA-256)
-                                              │
-                                    clean_data.py  — wide → long, *** → NULL, 5 validation checks
-                                              │
-                                     load_data.py  — one transaction, COPY, idempotent
-                                              ▼
-                     PostgreSQL 17 (Docker) ── public: datasets, regions, monthly_anomalies,
-                                              │          zonal_annual_anomalies, views
-                                              │ playground: read-only views for the app
-                                              ▼
-                        Streamlit app  ── connects as gts_reader (read-only role)
-                         ├─ Home · Climate Explorer (Plotly)
-                         └─ SQL Playground ── sql_guard (sqlglot) ── DB privileges + 3 s timeout
+ NASA GISTEMP CSV ─► download_data.py ─► clean_data.py ─► load_data.py ─┐
+   (global, hemispheres, latitude bands; manifest with SHA-256)          │
+                                                                         ▼
+ NASA 2°x2° NetCDF ─┐                                     PostgreSQL 17 + PostGIS 3.6 (Docker)
+ Natural Earth ─────┴► download_grid.py ─► load_grid.py ─►  public: monthly + zonal series
+   (COPY 25M rows, constraints after load, spatial join)      grid_anomalies (partitioned by decade)
+                                                              grid_cells, countries, cell_countries
+                                                              materialized views (cell, country, trends)
+                                                            playground: read-only views
+                                                                         │
+                          Streamlit app ── connects as gts_reader (read-only role) ◄─┘
+                           ├─ Home · Climate Explorer · Warming Map (Plotly)
+                           └─ SQL Playground ── sql_guard (sqlglot) ── DB privileges + 3 s timeout
 ```
 
 ## Quick start
 
-Requirements: Python 3.11+, Docker.
+Requirements: Python 3.11+, Docker, ~3 GB free disk for the grid.
 
 ```bash
 # 1. Python environment
@@ -75,81 +102,92 @@ pip install -r requirements.txt
 # 2. Settings: copy and set your own passwords
 cp .env.example .env
 
-# 3. Database (PostgreSQL 17 on 127.0.0.1:5433)
+# 3. Database (PostgreSQL 17 + PostGIS on 127.0.0.1:5433)
 docker compose up -d
-python scripts/setup_database.py       # schema + read-only role
+python scripts/setup_database.py       # schemas + read-only role
 
 # 4. Data
-python scripts/download_data.py        # optional: refresh from NASA (a snapshot is committed)
-python scripts/clean_data.py
+python scripts/clean_data.py           # global series (a NASA snapshot is committed)
 python scripts/load_data.py
+python scripts/download_grid.py        # grid + country borders (~29 MB download)
+python scripts/load_grid.py            # ~25M rows, about a minute
 
 # 5. Run
 streamlit run app/main.py              # http://localhost:8501
-pytest                                 # 96 tests
+pytest                                 # 148 tests
+python scripts/benchmark.py            # optional: re-run the performance study
 ```
 
 ## Database
 
-| Object | Description |
-|---|---|
-| `datasets` | One row per downloaded NASA snapshot (data versioning) |
-| `regions` | Global, hemispheres and 11 latitude bands with their bounds |
-| `monthly_anomalies` | GLB / NH / SH, one row per month; PK `(dataset_id, region_id, year, month)`, generated `obs_date` |
-| `zonal_annual_anomalies` | Latitude bands, one row per year |
-| `v_monthly`, `v_annual` | Latest snapshot with region codes — the easiest place to start querying |
-| `playground.*` | The only objects the app's read-only role can see |
+| Object | Rows | Description |
+|---|---:|---|
+| `datasets` | 2 | One row per downloaded snapshot (data versioning) |
+| `regions` | 14 | Global, hemispheres and 11 latitude bands with their bounds |
+| `monthly_anomalies` | 5,286 | GLB / NH / SH monthly; PK `(dataset_id, region_id, year, month)` |
+| `zonal_annual_anomalies` | 1,606 | Latitude bands, annual |
+| `grid_cells` | 16,200 | 2°×2° cell polygons with exact spherical area weights |
+| `grid_anomalies` | 25.4 M | Partitioned by decade; anomaly as lossless `SMALLINT` hundredths |
+| `countries`, `cell_countries` | 242 / 8.3 k | Natural Earth borders and their overlap with every cell (km²) |
+| `v_grid_annual`, `v_grid_trends`, `v_country_annual` | | Materialized aggregates for the app |
+| `playground.*` | | The only objects the app's read-only role can see |
 
-Design notes: anomalies are `NUMERIC(4,2)` (exact, as published) and nullable (`***` → `NULL`,
-never `0`); NASA's own annual/seasonal columns are not stored but recomputed in SQL and
-checked against NASA in the tests. Details: [`docs/DATA.md`](docs/DATA.md).
+Design notes and validation: [`docs/DATA.md`](docs/DATA.md). Among the checks: NASA's annual
+values are recomputed in SQL and must match; the grid's area-weighted mean must reproduce
+NASA's global series (mean difference 0.005 °C, r = 0.9999); stored grid values must equal
+the NetCDF file exactly.
 
 ## SQL library
 
 | File | Queries | Topics |
-|---|---|---|
-| [`sql/basic_queries.sql`](sql/basic_queries.sql) | 10 | SELECT, WHERE, ORDER BY, NULLS LAST, GROUP BY, HAVING, aggregates, LIKE |
-| [`sql/intermediate_queries.sql`](sql/intermediate_queries.sql) | 11 | CTEs, self-join, LEFT JOIN, subqueries, EXISTS, UNION ALL, CASE, FILTER, dates |
-| [`sql/advanced_queries.sql`](sql/advanced_queries.sql) | 16 | RANK / DENSE_RANK / ROW_NUMBER, LAG / LEAD, moving windows (ROWS vs RANGE), NTILE, PERCENT_RANK, gaps-and-islands, LATERAL, ROLLUP, regr_slope, corr, percentile_cont |
+|---|---:|---|
+| [`basic_queries.sql`](sql/basic_queries.sql) | 10 | SELECT, WHERE, ORDER BY, NULLS LAST, GROUP BY, HAVING, aggregates, LIKE |
+| [`intermediate_queries.sql`](sql/intermediate_queries.sql) | 11 | CTEs, self-join, LEFT JOIN, subqueries, EXISTS, UNION ALL, CASE, FILTER, dates |
+| [`advanced_queries.sql`](sql/advanced_queries.sql) | 16 | RANK / DENSE_RANK / ROW_NUMBER, LAG / LEAD, ROWS vs RANGE windows, NTILE, gaps-and-islands, LATERAL, ROLLUP, regr_slope, corr, percentile_cont |
+| [`spatial_queries.sql`](sql/spatial_queries.sql) | 10 | Spatial joins, ST_Contains, KNN `<->`, ST_Area on geography, area weighting, DISTINCT ON |
 
-Every query is commented and runs in CI.
+Every query is commented, available in the Playground and runs in CI.
 
 ## Security
 
-The Playground has two independent layers: a sqlglot-based validator and a PostgreSQL role
-that can only read four views, cannot write or create anything, and is stopped after 3 seconds.
-See [`docs/SECURITY.md`](docs/SECURITY.md).
+The Playground has two independent layers: a sqlglot-based validator and a PostgreSQL role that
+can only read the playground views and PostGIS functions, cannot write or create anything, and
+is stopped after 3 seconds. See [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ## Testing
 
 | Suite | Tests | Covers |
-|---|---|---|
+|---|---:|---|
 | `test_clean_data.py` | 13 | Parsing, `***` → NULL, long format, NASA J-D match, baseline check |
-| `test_database.py` | 14 | Row counts, SQL annual mean = NASA J-D, constraints, keys, SQL library runs |
-| `test_sql_guard.py` | 34 | 24 attack queries blocked, all library queries allowed |
+| `test_database.py` | 15 | Row counts, SQL annual mean = NASA J-D, constraints, keys, SQL library runs |
+| `test_grid.py` | 9 | Area weights, valid geometry, lossless storage, grid = NASA global mean, partition pruning |
+| `test_sql_guard.py` | 35 | 24 attack queries blocked, all library queries allowed |
 | `test_reader_role.py` | 10 | Database-level protection without the validator |
+| `test_queries.py` | 38 | Static checks on the app's SQL (placeholders) |
 | `test_challenges.py` | 15 | Challenge references and the answer checker |
-| `test_app.py` | 10 | Every page renders in both languages; Playground runs and blocks queries |
+| `test_app.py` | 13 | Every page renders in both languages; Playground runs and blocks queries |
 
-GitHub Actions runs the whole pipeline (schema → clean → load → tests) on every push.
+GitHub Actions builds the database on PostGIS, loads the series and a grid subset, and runs
+all tests on every push.
 
 ## Project structure
 
 ```text
 app/                Streamlit app (main.py, views/, sql_guard.py, queries.py, i18n.py, ...)
-data/raw/           NASA files as downloaded + manifest.json
-data/processed/     cleaned CSVs (generated, not committed)
-database/           schema.sql, roles.sql
-docs/               DATA.md (data dictionary), SECURITY.md
-scripts/            download, clean, load and database setup
+data/raw/           NASA series snapshot + manifests (grid files are downloaded)
+data/processed/     cleaned CSVs (generated)
+database/           schema.sql, spatial_schema.sql, roles.sql
+docs/               DATA.md, PERFORMANCE.md (+ benchmark_results.json), SECURITY.md
+scripts/            download, clean, load, grid, setup and benchmark scripts
 sql/                SQL analysis library
 tests/              pytest suites
 ```
 
-## Data source and license
+## Data sources and license
 
-Data: NASA GISS Surface Temperature Analysis (GISTEMP v4), https://data.giss.nasa.gov/gistemp/.
-GISTEMP Team, 2026: GISS Surface Temperature Analysis (GISTEMP), version 4. NASA Goddard
-Institute for Space Studies. Dataset accessed 2026-11-21.
+- NASA GISS Surface Temperature Analysis (GISTEMP v4), https://data.giss.nasa.gov/gistemp/ —
+  GISTEMP Team, 2026: GISS Surface Temperature Analysis (GISTEMP), version 4. NASA Goddard
+  Institute for Space Studies. Dataset accessed 2026-11-21.
+- Natural Earth 1:50m Admin 0 Countries, v5.1.2 — public domain, https://www.naturalearthdata.com/
 
-Code: MIT License © 2026 Zeynep Sönmez. The NASA data is subject to NASA's terms.
+Code: MIT License © 2026 Zeynep Sönmez. The data is subject to its providers' terms.

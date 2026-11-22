@@ -109,6 +109,41 @@ TEXT: dict[str, dict[str, str]] = {
                             "tr": "Seçili yıllardaki doğrusal eğilim (regr_slope). Arktik, küresel ortalamanın birkaç katı "
                                   "hızla ısınıyor — Arktik amplifikasyonu."},
 
+    # --- warming map (PostGIS) ---------------------------------------------------------
+    "nav.map":             {"en": "Warming Map", "tr": "Isınma Haritası"},
+    "map.intro":           {"en": "Built from NASA's 2°×2° grid — about 25 million monthly values in PostGIS, "
+                                  "joined with country borders.",
+                            "tr": "NASA'nın 2°×2° ızgarasından üretildi: PostGIS'te yaklaşık 25 milyon aylık değer, "
+                                  "ülke sınırlarıyla birleştirildi."},
+    "map.tab.countries":   {"en": "Countries", "tr": "Ülkeler"},
+    "map.tab.grid":        {"en": "Grid", "tr": "Izgara"},
+    "map.tab.country":     {"en": "One country", "tr": "Tek ülke"},
+    "map.period":          {"en": "Trend period", "tr": "Eğilim dönemi"},
+    "map.countries.title": {"en": "Warming rate by country", "tr": "Ülkelere göre ısınma hızı"},
+    "map.countries.note":  {"en": "Area-weighted mean of the grid cells inside each border (overlap measured with "
+                                  "ST_Area on the sphere), then a linear trend. Years with less than 90% of a "
+                                  "country covered by data are left out; grey = not enough data.",
+                            "tr": "Her ülkenin sınırları içindeki ızgara hücrelerinin alan ağırlıklı ortalaması "
+                                  "(örtüşme küre üzerinde ST_Area ile ölçülür), ardından doğrusal eğilim. Ülkenin "
+                                  "%90'ından azının verisi olan yıllar alınmaz; gri = yetersiz veri."},
+    "map.top":             {"en": "Fastest warming", "tr": "En hızlı ısınanlar"},
+    "map.grid.title":      {"en": "Annual anomaly on the 2°×2° grid", "tr": "2°×2° ızgarada yıllık anomali"},
+    "map.grid.year":       {"en": "Year", "tr": "Yıl"},
+    "map.grid.note":       {"en": "Each square is one grid cell's annual mean. Empty areas had no observations "
+                                  "within 1200 km — compare an early year such as 1890 with today.",
+                            "tr": "Her kare bir ızgara hücresinin yıllık ortalamasıdır. Boş alanlarda 1200 km "
+                                  "içinde gözlem yoktu; 1890 gibi erken bir yılı bugünle karşılaştırın."},
+    "map.country.pick":    {"en": "Country", "tr": "Ülke"},
+    "map.country.title":   {"en": "{country} vs the global mean", "tr": "{country} ve küresel ortalama"},
+    "map.country.rate":    {"en": "Warming rate since 1970", "tr": "1970'ten beri ısınma hızı"},
+    "map.country.recent":  {"en": "Mean of the last 10 years", "tr": "Son 10 yılın ortalaması"},
+    "map.country.ratio":   {"en": "Compared with the globe", "tr": "Küresele göre"},
+    "map.country.note":    {"en": "Small countries are covered by only a few cells, so their series are smoother "
+                                  "versions of the surrounding region rather than local station records.",
+                            "tr": "Küçük ülkeler birkaç hücreyle temsil edilir; serileri yerel istasyon kayıtları "
+                                  "değil, çevre bölgenin yumuşatılmış hâlidir."},
+    "map.global":          {"en": "Global mean", "tr": "Küresel ortalama"},
+
     # --- playground ---------------------------------------------------------------
     "pg.schema":           {"en": "Schema · playground", "tr": "Şema · playground"},
     "pg.samples":          {"en": "Sample queries", "tr": "Örnek sorgular"},
