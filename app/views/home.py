@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import queries as q
-from components import WARM_SCALE, footer
+from components import COAST, GRID, LAND, OCEAN, WARM_SCALE, footer
 from database import read_df, read_row
 from i18n import month_names, t
 
@@ -36,11 +36,11 @@ def globe_figure() -> go.Figure:
     ))
     fig.update_geos(
         projection_type="orthographic", projection_rotation=dict(lon=20, lat=22),
-        showland=True, landcolor="#D0D5DD", showocean=True, oceancolor="#F2F4F7",
-        showcoastlines=True, coastlinecolor="#667085", coastlinewidth=0.8, showcountries=False,
+        showland=True, landcolor=LAND, showocean=True, oceancolor=OCEAN,
+        showcoastlines=True, coastlinecolor=COAST, coastlinewidth=0.8, showcountries=False,
         showframe=False, bgcolor="rgba(0,0,0,0)",
-        lataxis=dict(showgrid=True, gridcolor="#E4E7EC", dtick=30),
-        lonaxis=dict(showgrid=True, gridcolor="#E4E7EC", dtick=30),
+        lataxis=dict(showgrid=True, gridcolor=GRID, dtick=30),
+        lonaxis=dict(showgrid=True, gridcolor=GRID, dtick=30),
     )
     fig.update_layout(height=430, margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor="rgba(0,0,0,0)")
     return fig

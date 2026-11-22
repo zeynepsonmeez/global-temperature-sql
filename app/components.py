@@ -8,17 +8,28 @@ import streamlit as st
 from i18n import t
 from queries import render
 
-HEAT = "#C2410C"
-HEAT_LIGHT = "#FDBA74"
-COOL = "#1D4ED8"
-INK = "#101828"
-MUTED = "#475467"
-GRID = "#EAECF0"
-REGION_COLORS = {"GLB": HEAT, "NH": "#9A3412", "SH": COOL}
-# Sequential warm scale for anomalies (light = less warming, dark = more).
-WARM_SCALE = ["#FED7AA", "#FDBA74", "#FB923C", "#F97316", "#EA580C", "#C2410C", "#7C2D12"]
-# Diverging scale for heatmaps: blue below the baseline, orange above.
-DIVERGING = [[0.0, "#1D4ED8"], [0.35, "#93C5FD"], [0.5, "#F8FAFC"], [0.65, "#FDBA74"], [1.0, "#7C2D12"]]
+# Every colour here must work on BOTH the light (#F6F7F9) and the dark (#0B1220) background.
+# st.context.theme can report the wrong theme on first load or right after a switch, so the
+# app does not pick colours per theme: text inherits the theme colour, lines are translucent
+# greys, and the accents are mid-tones that keep their contrast on either background.
+HEAT = "#EA580C"
+HEAT_LIGHT = "#FB923C"
+COOL = "#3B82F6"
+MUTED = "rgba(148, 163, 184, 0.95)"          # slate-400: readable on light and dark
+GRID = "rgba(148, 163, 184, 0.22)"
+ZERO = "rgba(148, 163, 184, 0.75)"
+REGION_COLORS = {"GLB": HEAT, "NH": "#E11D48", "SH": COOL}
+# Sequential warm scale for anomalies: amber -> orange -> red. It ends on a SATURATED colour,
+# not a dark one, so the strongest warming (the Arctic) stands out on both backgrounds;
+# a scale ending in dark brown vanishes on the dark theme.
+WARM_SCALE = ["#FDE68A", "#FCD34D", "#FBBF24", "#F59E0B", "#F97316", "#EF4444", "#E11D48"]
+# Diverging scale for heatmaps: blue below the baseline, red above, neutral grey at zero
+# (a near-white midpoint would glare on the dark theme).
+DIVERGING = [[0.0, "#2563EB"], [0.3, "#93C5FD"], [0.5, "#94A3B8"], [0.7, "#FB923C"], [1.0, "#E11D48"]]
+# Globe base map
+LAND = "rgba(148, 163, 184, 0.38)"
+OCEAN = "rgba(148, 163, 184, 0.10)"
+COAST = "rgba(100, 116, 139, 0.95)"
 
 PLAYGROUND_PAGE = "views/playground.py"
 
@@ -32,11 +43,12 @@ def page_style() -> None:
           .stTextArea textarea { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
                                  font-size: 0.9rem; line-height: 1.55; }
           h1, h2, h3 { letter-spacing: -0.02em; }
-          .gts-hero { font-size: 3.2rem; line-height: 1.05; font-weight: 700; margin: 0.4rem 0 1rem; color: #101828; }
-          .gts-hero span { color: #C2410C; }
-          .gts-badge { display: inline-block; font-size: 0.8rem; font-weight: 600; color: #9A3412;
-                       background: #FFEDD5; padding: 4px 10px; border-radius: 999px; }
-          .gts-muted { color: #475467; }
+          .gts-hero { font-size: 3.2rem; line-height: 1.05; font-weight: 700; margin: 0.4rem 0 1rem; color: inherit; }
+          .gts-hero span { color: #EA580C; }
+          .gts-badge { display: inline-block; font-size: 0.8rem; font-weight: 600; color: #EA580C;
+                       background: rgba(234, 88, 12, 0.12); border: 1px solid rgba(234, 88, 12, 0.35);
+                       padding: 4px 10px; border-radius: 999px; }
+          .gts-muted { color: inherit; opacity: 0.78; }
           @media (max-width: 640px) { .gts-hero { font-size: 2.2rem; } }
         </style>
         """,
@@ -50,12 +62,12 @@ def style_figure(fig: go.Figure, height: int = 420, y_title: str = "°C") -> go.
         margin=dict(l=10, r=10, t=30, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color=INK),
+        # No fixed font colour: st.plotly_chart's Streamlit theme sets it for light and dark.
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         hovermode="x unified",
     )
     fig.update_xaxes(showgrid=False, linecolor=GRID)
-    fig.update_yaxes(title_text=y_title, gridcolor=GRID, zeroline=True, zerolinecolor="#98A2B3")
+    fig.update_yaxes(title_text=y_title, gridcolor=GRID, zeroline=True, zerolinecolor=ZERO)
     return fig
 
 

@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import queries as q
-from components import (COOL, DIVERGING, HEAT, HEAT_LIGHT, MUTED, REGION_COLORS,
+from components import (COOL, DIVERGING, GRID, HEAT, HEAT_LIGHT, MUTED, REGION_COLORS,
                         footer, sql_panel, style_figure)
 from database import read_df, read_row
 from i18n import month_names, t
@@ -76,7 +76,7 @@ with tabs[1]:
         textposition="outside", hovertemplate="%{y}: %{x:+.2f} °C<extra></extra>",
     ))
     fig = style_figure(fig, height=440, y_title="")
-    fig.update_xaxes(title_text="°C", showgrid=True, gridcolor="#EAECF0")
+    fig.update_xaxes(title_text="°C", showgrid=True, gridcolor=GRID)
     fig.update_layout(hovermode="closest")
     st.plotly_chart(fig, width="stretch")
     st.caption(t("hottest.note"))
@@ -168,7 +168,7 @@ with tabs[6]:
     ))
     fig = style_figure(fig, height=420, y_title="")
     fig.update_yaxes(autorange="reversed")
-    fig.update_xaxes(title_text=t("unit.decade"), showgrid=True, gridcolor="#EAECF0")
+    fig.update_xaxes(title_text=t("unit.decade"), showgrid=True, gridcolor=GRID)
     fig.update_layout(hovermode="closest")
     st.plotly_chart(fig, width="stretch")
     st.caption(t("bands.note"))

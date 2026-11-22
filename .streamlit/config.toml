@@ -1,10 +1,27 @@
+# Two themes: the app follows the visitor's system setting, and either can be picked
+# from the Settings menu. Accent colours are tuned per theme for contrast.
+
 [theme]
+font = "sans serif"
+baseRadius = "medium"
+
+[theme.light]
 base = "light"
 primaryColor = "#C2410C"
 backgroundColor = "#F6F7F9"
 secondaryBackgroundColor = "#FFFFFF"
 textColor = "#101828"
-font = "sans serif"
+
+[theme.dark]
+base = "dark"
+primaryColor = "#F97316"
+backgroundColor = "#0B1220"
+secondaryBackgroundColor = "#141D30"
+textColor = "#E2E8F0"
+
+[theme.dark.sidebar]
+backgroundColor = "#0F1729"
+secondaryBackgroundColor = "#1B2740"
 
 [browser]
 gatherUsageStats = false
