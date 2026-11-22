@@ -43,6 +43,18 @@ def page_style() -> None:
           .block-container, [data-testid="stMainBlockContainer"] { padding-top: 3.2rem; max-width: 1280px; }
           /* The EN/TR switch sits in the top bar instead of taking a row of every page. */
           .st-key-lang_toggle { position: fixed; top: 0.55rem; right: 3.4rem; z-index: 999991; width: auto !important; }
+          /* Orange top bar with white navigation on both themes. */
+          [data-testid="stHeader"] { background: #EA580C; }
+          [data-testid="stTopNavLink"], [data-testid="stTopNavLink"] *,
+          [data-testid="stMainMenuButton"], [data-testid="stMainMenuButton"] * { color: #FFFFFF !important; }
+          [data-testid="stTopNavLink"]:hover { background: rgba(255, 255, 255, 0.16) !important; }
+          [data-testid="stTopNavLink"][aria-current="page"], [data-testid="stTopNavLink"].active {
+            background: rgba(255, 255, 255, 0.24) !important; }
+          .st-key-lang_toggle button { background: transparent !important; color: #FFFFFF !important;
+                                       border-color: rgba(255, 255, 255, 0.7) !important; }
+          .st-key-lang_toggle button[aria-checked="true"] { background: #FFFFFF !important; color: #EA580C !important;
+                                                            border-color: #FFFFFF !important; }
+          .st-key-lang_toggle button * { color: inherit !important; }
           @media (max-width: 640px) {
             .block-container, [data-testid="stMainBlockContainer"] { padding-top: 2.6rem; }
           }

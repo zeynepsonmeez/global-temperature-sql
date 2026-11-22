@@ -48,7 +48,7 @@ def globe_figure() -> go.Figure:
         lataxis=dict(showgrid=True, gridcolor=GRID, dtick=30),
         lonaxis=dict(showgrid=True, gridcolor=GRID, dtick=30),
     )
-    fig.update_layout(height=430, margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor="rgba(0,0,0,0)")
+    fig.update_layout(height=360, margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor="rgba(0,0,0,0)")
     return fig
 
 
@@ -97,7 +97,7 @@ def render_globe(fig: go.Figure) -> None:
                         config={"displayModeBar": False, "responsive": True})
     script = _SPIN_SCRIPT.replace("__PAUSE__", t("home.globe.pause")).replace("__PLAY__", t("home.globe.play"))
     html = f'<div class="wrap"><button id="globe-toggle" type="button"></button>{chart}</div>{script}'
-    components.html(html, height=440)
+    components.html(html, height=370)
 
 
 hero, globe = st.columns([1.05, 1], gap="large", vertical_alignment="center")

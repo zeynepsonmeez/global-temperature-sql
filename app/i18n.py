@@ -32,11 +32,8 @@ TEXT: dict[str, dict[str, str]] = {
                             "tr": "145 yıllık küresel sıcaklık anomalisi verisini hazır analizlerle keşfedin ya da doğrudan "
                                   "PostgreSQL üzerinde kendi SQL sorgularınızı yazın. Her grafiğin arkasındaki sorgu açık."},
     "home.globe.title":    {"en": "Warming by latitude", "tr": "Enleme göre ısınma"},
-    "home.globe.caption":  {"en": "Turns slowly on its own — click or drag to take control, ▶ to let it spin again. "
-                                  "Each dot shows the mean anomaly of its latitude band over the last 10 years.",
-                            "tr": "Kendi kendine yavaşça döner — kontrolü almak için tıklayın ya da sürükleyin, tekrar "
-                                  "döndürmek için ▶. Her nokta, bulunduğu enlem bandının son 10 yıllık ortalama "
-                                  "anomalisini gösterir."},
+    "home.globe.caption":  {"en": "Each dot shows the mean anomaly of its latitude band over the last 10 years.",
+                            "tr": "Her nokta, bulunduğu enlem bandının son 10 yıllık ortalama anomalisini gösterir."},
     "home.globe.pause":    {"en": "Pause rotation", "tr": "Dönmeyi durdur"},
     "home.globe.play":     {"en": "Resume rotation", "tr": "Dönmeyi sürdür"},
     "home.fact.range":     {"en": "Coverage", "tr": "Veri aralığı"},
