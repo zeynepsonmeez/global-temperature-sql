@@ -3,6 +3,7 @@
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 
 import queries as q
 from components import COAST, GRID, LAND, OCEAN, WARM_SCALE, footer
@@ -28,11 +29,15 @@ def globe_figure() -> go.Figure:
             lons.append(lon)
             values.append(float(band.anomaly.iloc[0]))
 
+    # The globe is drawn inside its own frame (render_globe), which cannot follow the app's
+    # light/dark theme: the colour-bar text uses a grey that is readable on both.
+    axis_font = dict(color="#94A3B8", size=11)
     fig = go.Figure(go.Scattergeo(
         lat=lats, lon=lons, mode="markers",
         marker=dict(size=6, opacity=0.85, color=values, colorscale=WARM_SCALE, cmin=0, cmax=max(values),
                     line=dict(width=0),
-                    colorbar=dict(title="°C", thickness=10, len=0.55, x=1.0)),
+                    colorbar=dict(title=dict(text="°C", font=axis_font), tickfont=axis_font,
+                                  thickness=10, len=0.55, x=1.0)),
         hovertemplate="%{lat:.0f}° · %{marker.color:+.2f} °C<extra></extra>",
     ))
     fig.update_geos(
@@ -45,6 +50,54 @@ def globe_figure() -> go.Figure:
     )
     fig.update_layout(height=430, margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor="rgba(0,0,0,0)")
     return fig
+
+
+# Spins the globe slowly until the visitor touches it (click, drag, touch or scroll); a small
+# button pauses or resumes it. Visitors who ask the system for reduced motion start paused.
+# st.plotly_chart cannot animate on its own, so the figure is rendered as a small HTML
+# component and rotated through Plotly.relayout.
+_SPIN_SCRIPT = """
+<style>
+  html, body { margin: 0; background: transparent; }
+  .wrap { position: relative; }
+  #globe-toggle { position: absolute; top: 6px; left: 6px; z-index: 10; width: 34px; height: 34px;
+                  border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.6); cursor: pointer;
+                  background: rgba(148, 163, 184, 0.15); color: #94A3B8; font-size: 14px; }
+  #globe-toggle:hover { background: rgba(234, 88, 12, 0.18); color: #EA580C; }
+</style>
+<script>
+(function () {
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function start() {
+    const el = document.getElementById("globe");
+    const btn = document.getElementById("globe-toggle");
+    if (!el || !btn || !window.Plotly || !el.layout) { return setTimeout(start, 100); }
+    let timer = null;
+    const lon = () => ((el.layout.geo.projection.rotation || {}).lon || 0);
+    const tick = () => Plotly.relayout(el, {"geo.projection.rotation.lon": ((lon() + 0.35 + 540) % 360) - 180});
+    const set = (on) => {
+      clearInterval(timer);
+      timer = on ? setInterval(tick, 60) : null;
+      btn.textContent = on ? "\\u23F8" : "\\u25B6";
+      btn.setAttribute("aria-label", on ? "__PAUSE__" : "__PLAY__");
+      btn.title = btn.getAttribute("aria-label");
+    };
+    ["mousedown", "touchstart", "wheel"].forEach((ev) => el.addEventListener(ev, () => set(false), {passive: true}));
+    btn.addEventListener("click", () => set(timer === null));
+    set(!reduce);
+  }
+  start();
+})();
+</script>
+"""
+
+
+def render_globe(fig: go.Figure) -> None:
+    chart = fig.to_html(full_html=False, include_plotlyjs="cdn", div_id="globe",
+                        config={"displayModeBar": False, "responsive": True})
+    script = _SPIN_SCRIPT.replace("__PAUSE__", t("home.globe.pause")).replace("__PLAY__", t("home.globe.play"))
+    html = f'<div class="wrap"><button id="globe-toggle" type="button"></button>{chart}</div>{script}'
+    components.html(html, height=440)
 
 
 hero, globe = st.columns([1.05, 1], gap="large", vertical_alignment="center")
@@ -63,7 +116,7 @@ with hero:
 with globe, st.container(border=True):
     st.markdown(f"**{t('home.globe.title')}**")
     st.caption(t("home.globe.caption"))
-    st.plotly_chart(globe_figure(), width="stretch", config={"displayModeBar": False})
+    render_globe(globe_figure())
     with st.expander(t("sql.behind")):
         st.code(q.GLOBE, language="sql")
 
