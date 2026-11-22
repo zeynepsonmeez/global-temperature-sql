@@ -12,27 +12,28 @@ from i18n import month_names, t
 latest_year = read_row(q.FACTS).last_month.year
 REGIONS = ["GLB", "NH", "SH"]
 
-# --- Filters --------------------------------------------------------------------------
-st.sidebar.header(t("exp.filters"))
-start, end = st.sidebar.slider(t("exp.years"), 1880, latest_year, (1880, latest_year))
-regions = st.sidebar.multiselect(
-    t("exp.regions"), REGIONS, default=["GLB"], format_func=lambda c: t(f"region.{c}"),
-)
-month_options = [0, *range(1, 13)]
-month = st.sidebar.selectbox(
-    t("exp.month"), month_options,
-    format_func=lambda m: t("exp.month.annual") if m == 0 else month_names()[m - 1],
-)
-smooth = st.sidebar.toggle(t("exp.smooth"), value=True)
-st.sidebar.caption(t("footer.data"))
+st.title(t("nav.explorer"))
+
+# --- Filters ----------------------------------------------------------------------------
+# A filter bar above the charts instead of the sidebar: no other page has a sidebar, so
+# showing one here made the whole layout jump whenever the visitor switched pages.
+with st.container(border=True):
+    years_col, regions_col, month_col, smooth_col = st.columns([2.2, 2, 1.6, 1.3], vertical_alignment="bottom")
+    start, end = years_col.slider(t("exp.years"), 1880, latest_year, (1880, latest_year))
+    regions = regions_col.multiselect(
+        t("exp.regions"), REGIONS, default=["GLB"], format_func=lambda c: t(f"region.{c}"),
+    )
+    month = month_col.selectbox(
+        t("exp.month"), [0, *range(1, 13)],
+        format_func=lambda m: t("exp.month.annual") if m == 0 else month_names()[m - 1],
+    )
+    smooth = smooth_col.toggle(t("exp.smooth"), value=True)
 
 if not regions:
     st.warning(t("exp.pick_region"))
     st.stop()
 focus = regions[0]  # single-region charts use the first selected region
 period = {"start": start, "end": end}
-
-st.title(t("nav.explorer"))
 
 # --- Headline numbers ---------------------------------------------------------------
 kpi = read_row(q.KPIS, {"region": focus})
