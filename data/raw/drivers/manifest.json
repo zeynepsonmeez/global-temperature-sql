@@ -1,0 +1,19 @@
+{
+  "downloaded_at": "2026-11-22T14:52:26+00:00",
+  "files": {
+    "oni.ascii.txt": {
+      "description": "NOAA CPC Oceanic Nino Index: 3-month running mean SST anomaly in the Nino 3.4 region",
+      "url": "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt",
+      "bytes": 23050,
+      "last_modified": "Tue, 03 Nov 2026 19:31:48 GMT",
+      "sha256": "118c563331335c8649cdc2677e6be7ae89d1259d901345fcddbc2857af280f7f"
+    },
+    "co2_mm_mlo.csv": {
+      "description": "NOAA GML Mauna Loa monthly mean atmospheric CO2 (ppm)",
+      "url": "https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.csv",
+      "bytes": 38821,
+      "last_modified": "Thu, 19 Nov 2026 21:32:00 GMT",
+      "sha256": "163cadae3baa6dec7d3ae066108b50d1018a78447b1b6fc2b6e3936465549d16"
+    }
+  }
+}

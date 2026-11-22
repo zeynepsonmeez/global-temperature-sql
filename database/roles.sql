@@ -57,6 +57,13 @@ CREATE VIEW playground.v_grid_annual    AS SELECT * FROM public.v_grid_annual;
 CREATE VIEW playground.v_grid_trends    AS SELECT * FROM public.v_grid_trends;
 CREATE VIEW playground.v_country_annual AS SELECT * FROM public.v_country_annual;
 
+-- Climate drivers and model outputs (database/drivers_schema.sql)
+CREATE VIEW playground.v_enso AS SELECT * FROM public.v_enso;
+CREATE VIEW playground.v_co2  AS SELECT * FROM public.v_co2;
+CREATE VIEW playground.model_enso_adjusted AS SELECT * FROM public.model_enso_adjusted;
+CREATE VIEW playground.model_results       AS SELECT * FROM public.model_results;
+CREATE VIEW playground.model_breakpoints   AS SELECT * FROM public.model_breakpoints;
+
 COMMENT ON SCHEMA playground IS 'Read-only views for the web app and SQL Playground.';
 COMMENT ON VIEW playground.v_grid IS 'Monthly anomalies of every 2x2 degree cell (~25 million rows).';
 COMMENT ON VIEW playground.v_country_annual IS 'Area-weighted annual anomaly per country.';

@@ -24,7 +24,10 @@ import io
 import json
 import shutil
 import sys
+import tempfile
 import time
+from contextlib import contextmanager
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -50,14 +53,24 @@ def done(started: float, detail: str = "") -> None:
     print(f"OK     {detail} ({time.perf_counter() - started:,.1f} s)", flush=True)
 
 
-def open_grid() -> xr.Dataset:
-    if not NC.exists():
-        if not NC_GZ.exists():
-            sys.exit("Grid file not found — run scripts/download_grid.py first")
-        with gzip.open(NC_GZ, "rb") as source, NC.open("wb") as target:
+@contextmanager
+def open_grid(path=NC_GZ):
+    """Unpack the .nc.gz to a temporary file (deleted afterwards) and open it.
+
+    The unpacked file is ~55 MB, twice the download, so it is never kept in the project.
+    mask_and_scale=False keeps NASA's raw int16 hundredths: exact, no float rounding.
+    """
+    if not path.exists():
+        sys.exit("Grid file not found — run scripts/download_grid.py first")
+    with tempfile.TemporaryDirectory() as folder:
+        unpacked = Path(folder) / NC.name
+        with gzip.open(path, "rb") as source, unpacked.open("wb") as target:
             shutil.copyfileobj(source, target)
-    # mask_and_scale=False keeps NASA's raw int16 hundredths: exact, no float rounding.
-    return xr.open_dataset(NC, mask_and_scale=False)
+        grid = xr.open_dataset(unpacked, mask_and_scale=False)
+        try:
+            yield grid
+        finally:
+            grid.close()
 
 
 def copy_anomalies(cur, grid: xr.Dataset, start_year: int) -> int:
@@ -91,7 +104,11 @@ def main() -> int:
     args = parser.parse_args()
 
     manifest = json.loads((GRID_DIR / "manifest.json").read_text(encoding="utf-8"))
-    grid = open_grid()
+    with open_grid() as grid:
+        return load(grid, args, manifest)
+
+
+def load(grid: xr.Dataset, args: argparse.Namespace, manifest: dict) -> int:
     lat, lon = grid["lat"].values, grid["lon"].values
     # The cells are generated in SQL below; make sure they match the file's coordinates.
     if not (np.allclose(lat, -89 + 2 * np.arange(90)) and np.allclose(lon, -179 + 2 * np.arange(180))):

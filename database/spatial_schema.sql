@@ -4,6 +4,24 @@
 
 -- PostGIS lives in its own schema, so the read-only role can be given the spatial
 -- functions without being given access to the public schema.
+-- The postgis/postgis Docker image pre-installs PostGIS (plus topology and the tiger
+-- geocoder) into the PUBLIC schema of a fresh database. PostGIS cannot be moved with
+-- ALTER EXTENSION ... SET SCHEMA, so it is dropped and re-created in its own schema.
+-- Anything spatial that depended on it is rebuilt by this script anyway.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace
+               WHERE e.extname = 'postgis' AND n.nspname <> 'postgis') THEN
+        DROP EXTENSION IF EXISTS postgis_tiger_geocoder CASCADE;
+        DROP EXTENSION IF EXISTS postgis_topology CASCADE;
+        DROP EXTENSION IF EXISTS fuzzystrmatch CASCADE;
+        DROP EXTENSION postgis CASCADE;
+    END IF;
+    -- Empty schemas left behind by the image's init script (RESTRICT: kept if not empty).
+    DROP SCHEMA IF EXISTS tiger_data, tiger, topology RESTRICT;
+EXCEPTION WHEN dependent_objects_still_exist THEN
+    RAISE NOTICE 'tiger/topology schemas are not empty; left in place';
+END $$;
 CREATE SCHEMA IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS postgis SCHEMA postgis;
 DO $$ BEGIN

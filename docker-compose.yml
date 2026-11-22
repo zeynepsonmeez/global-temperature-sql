@@ -11,14 +11,16 @@ services:
     restart: unless-stopped
     # Parallel queries on the ~28M-row grid table use shared memory; Docker's default 64 MB is too small.
     shm_size: 512mb
-    # Sized for a laptop: larger buffers for the grid table, faster index builds and bulk loads.
+    # Sized for a laptop: larger buffers for the grid table and faster index builds.
+    # max_wal_size caps the write-ahead log kept on disk; at 4GB it held ~4 GB of WAL after the
+    # grid load, so it stays at 1GB (bulk loads only trigger checkpoints a little more often).
     command: >
       postgres
       -c shared_buffers=512MB
       -c effective_cache_size=2GB
       -c maintenance_work_mem=512MB
       -c work_mem=32MB
-      -c max_wal_size=4GB
+      -c max_wal_size=1GB
       -c random_page_cost=1.1
     environment:
       POSTGRES_DB: ${POSTGRES_DB}

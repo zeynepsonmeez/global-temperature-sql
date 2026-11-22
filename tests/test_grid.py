@@ -7,7 +7,7 @@ import pytest
 from db import ROOT, get_connection
 from database import connect as reader_connect
 
-GRID_FILE = ROOT / "data" / "raw" / "grid" / "gistemp1200_GHCNv4_ERSSTv5.nc"
+GRID_FILE = ROOT / "data" / "raw" / "grid" / "gistemp1200_GHCNv4_ERSSTv5.nc.gz"
 
 
 @pytest.fixture(scope="module")
@@ -65,12 +65,13 @@ def test_grid_mean_reproduces_nasa_global_series(cur):
     assert float(correlation) > 0.999
 
 
-@pytest.mark.skipif(not GRID_FILE.exists(), reason="NetCDF file not unpacked")
+@pytest.mark.skipif(not GRID_FILE.exists(), reason="grid file not downloaded")
 def test_storage_is_lossless_against_the_netcdf_file(cur):
     """anomaly_c (SMALLINT hundredths) must equal NASA's int16 values exactly."""
-    xr = pytest.importorskip("xarray")
-    grid = xr.open_dataset(GRID_FILE, mask_and_scale=False)
-    month = grid["tempanomaly"].sel(time="2024-07").values.reshape(-1)
+    pytest.importorskip("xarray")
+    from load_grid import open_grid
+    with open_grid(GRID_FILE) as grid:
+        month = grid["tempanomaly"].sel(time="2024-07").values.reshape(-1)
     expected = {cell + 1: int(v) for cell, v in enumerate(month) if v != 32767}
     cur.execute("SELECT cell_id, anomaly_c FROM grid_anomalies WHERE obs_date = DATE '2024-07-01'")
     stored = dict(cur.fetchall())
