@@ -138,7 +138,7 @@ python scripts/run_models.py           # regression, ENSO-adjusted series, break
 
 # 5. Run
 streamlit run app/main.py              # http://localhost:8501
-pytest                                 # 421 test cases
+pytest                                 # 437 test cases
 python scripts/benchmark.py            # optional: re-run the performance study
 ```
 
@@ -224,10 +224,10 @@ is stopped after 3 seconds. See [`docs/SECURITY.md`](docs/SECURITY.md).
 | `test_queries.py` | 56 | Static checks on the app's SQL (placeholders) |
 | `test_helpers.py` | 14 | SQL literal quoting, library numbering, psql command (password never on the command line) |
 | `test_challenges.py` | 15 | Challenge references and the answer checker |
-| `test_i18n.py` | 175 | Every text in EN and TR, matching placeholders, every key used in the code exists |
+| `test_i18n.py` | 191 | Every text in EN and TR, matching placeholders, every key used in the code exists |
 | `test_app.py` | 16 | Every page renders in both languages; Playground runs and blocks queries |
 
-**421 test cases from 95 test functions** — many are parametrised (for example one case per
+**437 test cases from 95 test functions** — many are parametrised (for example one case per
 translation key or per attack query).
 
 GitHub Actions runs two jobs on every push: **lint** (ruff, sqlfluff) and **test**, which builds
