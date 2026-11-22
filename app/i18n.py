@@ -117,7 +117,12 @@ TEXT: dict[str, dict[str, str]] = {
                                   "ülke sınırlarıyla birleştirildi."},
     "map.tab.countries":   {"en": "Countries", "tr": "Ülkeler"},
     "map.tab.grid":        {"en": "Grid", "tr": "Izgara"},
-    "map.tab.country":     {"en": "One country", "tr": "Tek ülke"},
+    "map.tab.country":     {"en": "Compare countries", "tr": "Ülkeleri karşılaştır"},
+    "map.compare.pick":    {"en": "Countries (up to 5)", "tr": "Ülkeler (en fazla 5)"},
+    "map.compare.title":   {"en": "Countries vs the global mean", "tr": "Ülkeler ve küresel ortalama"},
+    "map.compare.empty":   {"en": "Pick one or more countries to compare with the global mean.",
+                            "tr": "Küresel ortalamayla karşılaştırmak için bir ya da daha fazla ülke seçin."},
+    "map.compare.col.name": {"en": "Series", "tr": "Seri"},
     "map.period":          {"en": "Trend period", "tr": "Eğilim dönemi"},
     "map.countries.title": {"en": "Warming rate by country", "tr": "Ülkelere göre ısınma hızı"},
     "map.countries.note":  {"en": "Area-weighted mean of the grid cells inside each border (overlap measured with "
@@ -133,8 +138,6 @@ TEXT: dict[str, dict[str, str]] = {
                                   "within 1200 km — compare an early year such as 1890 with today.",
                             "tr": "Her kare bir ızgara hücresinin yıllık ortalamasıdır. Boş alanlarda 1200 km "
                                   "içinde gözlem yoktu; 1890 gibi erken bir yılı bugünle karşılaştırın."},
-    "map.country.pick":    {"en": "Country", "tr": "Ülke"},
-    "map.country.title":   {"en": "{country} vs the global mean", "tr": "{country} ve küresel ortalama"},
     "map.country.rate":    {"en": "Warming rate since 1970", "tr": "1970'ten beri ısınma hızı"},
     "map.country.recent":  {"en": "Mean of the last 10 years", "tr": "Son 10 yılın ortalaması"},
     "map.country.ratio":   {"en": "Compared with the globe", "tr": "Küresele göre"},

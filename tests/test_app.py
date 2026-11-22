@@ -39,6 +39,17 @@ def test_explorer_shows_kpis_and_tabs():
     assert len(at.tabs) == 7
 
 
+def test_map_compares_countries_with_the_global_mean():
+    at = open_page("views/map.py")
+    at.multiselect(key="map_countries").set_value(["TUR", "DEU"]).run()
+    assert not at.exception
+    table = at.dataframe[-1].value
+    assert len(table) == 3                                    # Türkiye, Germany, global mean
+    at.multiselect(key="map_countries").set_value([]).run()  # nothing picked: global mean only
+    assert not at.exception
+    assert len(at.dataframe[-1].value) == 1
+
+
 def test_playground_starts_with_an_empty_editor():
     at = open_page("views/playground.py")
     assert at.text_area[0].value == ""

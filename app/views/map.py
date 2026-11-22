@@ -1,11 +1,10 @@
-"""Warming Map: country choropleth, 2°x2° grid map and single-country series (PostGIS)."""
+"""Warming Map: country choropleth, 2°x2° grid map and country comparison (PostGIS)."""
 
-import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 
 import queries as q
-from components import (COAST, DIVERGING, GRID, HEAT, LAND, MUTED, OCEAN, WARM_SCALE,
+from components import (COAST, COMPARE_COLORS, DIVERGING, GRID, LAND, MUTED, OCEAN, WARM_SCALE,
                         footer, sql_panel, style_figure)
 from database import read_df, read_row
 from i18n import t
@@ -67,31 +66,47 @@ with grid_tab:
     st.caption(t("map.grid.note"))
     sql_panel(q.GRID_YEAR, params, cells, f"grid_{year}")
 
-# 3. One country ------------------------------------------------------------------------------------
+# 3. Compare countries ------------------------------------------------------------------------------
 with country_tab:
     options = read_df(q.COUNTRY_LIST)
     names = dict(zip(options.adm0_a3, options.country))
-    codes = list(names)
-    country = st.selectbox(t("map.country.pick"), codes, format_func=names.get,
-                           index=codes.index("TUR") if "TUR" in codes else 0, key="map_country")
-    params = {"country": country}
-    series = read_df(q.COUNTRY_SERIES, params)
-    recent = series[series.year > series.year.max() - 10]
-    since_1970 = series[series.year >= 1970]
-    rate =np.polyfit(since_1970.year, since_1970.country, 1)[0] * 10
-    global_rate = np.polyfit(since_1970.year, since_1970["global"], 1)[0] * 10
+    picked = st.multiselect(t("map.compare.pick"), list(names), default=["TUR"] if "TUR" in names else [],
+                            format_func=names.get, max_selections=len(COMPARE_COLORS), key="map_countries")
+    smooth = st.toggle(t("exp.smooth"), value=True, key="map_smooth")
+    params = {"countries": picked}
+    series = read_df(q.COUNTRY_COMPARE, params)
+    stats = read_df(q.COUNTRY_COMPARE_STATS, params)
 
-    st.subheader(t("map.country.title", country=names[country]))
-    k1, k2, k3 = st.columns(3)
-    k1.metric(t("map.country.rate"), f"{rate:+.2f} {t('unit.decade')}", border=True)
-    k2.metric(t("map.country.recent"), f"{recent.country.mean():+.2f} °C", border=True)
-    k3.metric(t("map.country.ratio"), f"× {rate / global_rate:.1f}", border=True)
+    st.subheader(t("map.compare.title"))
+    if not picked:
+        st.info(t("map.compare.empty"))
 
+    # Global mean first (grey, behind), then each country in its own colour.
     fig = go.Figure()
-    fig.add_scatter(x=series.year, y=series.country, name=names[country], line=dict(color=HEAT, width=2))
-    fig.add_scatter(x=series.year, y=series["global"], name=t("map.global"), line=dict(color=MUTED, width=2))
-    st.plotly_chart(style_figure(fig), width="stretch")
+    order = ["GLB", *picked]
+    colors = {"GLB": MUTED, **dict(zip(picked, COMPARE_COLORS))}
+    for code in order:
+        part = series[series.code == code]
+        label = t("map.global") if code == "GLB" else names[code]
+        y = part.moving_avg_5y if smooth else part.anomaly
+        dash = "dash" if code == "GLB" else "solid"
+        fig.add_scatter(x=part.year, y=y, name=label, mode="lines",
+                        line=dict(color=colors[code], width=3 if code != "GLB" else 2.5, dash=dash))
+    st.plotly_chart(style_figure(fig, height=460), width="stretch")
+
+    # Comparison table: rate, recent mean and how many times faster than the globe.
+    global_rate = float(stats.loc[stats.code == "GLB", "rate_since_1970"].iloc[0])
+    table = stats.assign(
+        name=[t("map.global") if c == "GLB" else names[c] for c in stats.code],
+        ratio=(stats.rate_since_1970 / global_rate).round(1),
+    )[["name", "rate_since_1970", "mean_last_10y", "ratio"]].rename(columns={
+        "name": t("map.compare.col.name"),
+        "rate_since_1970": f"{t('map.country.rate')} ({t('unit.decade')})",
+        "mean_last_10y": f"{t('map.country.recent')} (°C)",
+        "ratio": t("map.country.ratio"),
+    })
+    st.dataframe(table, hide_index=True, width="stretch")
     st.caption(t("map.country.note"))
-    sql_panel(q.COUNTRY_SERIES, params, series, f"country_{country}")
+    sql_panel(q.COUNTRY_COMPARE, params, series, "country_compare")
 
 footer()

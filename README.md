@@ -23,8 +23,8 @@ record tracker and warming by latitude band. Every chart has a **"SQL behind thi
 panel and can be opened in the Playground with one click.
 
 **Warming Map** — built on NASA's 2°×2° grid in PostGIS: a country choropleth of warming
-rates for any period, the full grid for any year since 1880, and a page for every country
-compared with the global mean. Country series are area-weighted from the grid cells inside
+rates for any period, the full grid for any year since 1880, and a side-by-side comparison of
+up to five countries against the global mean. Country series are area-weighted from the grid cells inside
 each border.
 
 **SQL Playground** — write and run read-only SQL against the real database (including PostGIS
@@ -114,7 +114,7 @@ python scripts/load_grid.py            # ~25M rows, about a minute
 
 # 5. Run
 streamlit run app/main.py              # http://localhost:8501
-pytest                                 # 148 tests
+pytest                                 # 153 tests
 python scripts/benchmark.py            # optional: re-run the performance study
 ```
 
@@ -165,7 +165,7 @@ is stopped after 3 seconds. See [`docs/SECURITY.md`](docs/SECURITY.md).
 | `test_reader_role.py` | 10 | Database-level protection without the validator |
 | `test_queries.py` | 38 | Static checks on the app's SQL (placeholders) |
 | `test_challenges.py` | 15 | Challenge references and the answer checker |
-| `test_app.py` | 13 | Every page renders in both languages; Playground runs and blocks queries |
+| `test_app.py` | 14 | Every page renders in both languages; Playground runs and blocks queries |
 
 GitHub Actions builds the database on PostGIS, loads the series and a grid subset, and runs
 all tests on every push.

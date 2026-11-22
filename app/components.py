@@ -19,6 +19,8 @@ MUTED = "rgba(148, 163, 184, 0.95)"          # slate-400: readable on light and 
 GRID = "rgba(148, 163, 184, 0.22)"
 ZERO = "rgba(148, 163, 184, 0.75)"
 REGION_COLORS = {"GLB": HEAT, "NH": "#E11D48", "SH": COOL}
+# Up to five countries side by side: distinct hues, readable on light and dark backgrounds.
+COMPARE_COLORS = ["#EA580C", "#3B82F6", "#10B981", "#A855F7", "#E11D48"]
 # Sequential warm scale for anomalies: amber -> orange -> red. It ends on a SATURATED colour,
 # not a dark one, so the strongest warming (the Arctic) stands out on both backgrounds;
 # a scale ending in dark brown vanishes on the dark theme.

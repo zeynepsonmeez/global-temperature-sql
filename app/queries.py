@@ -207,22 +207,44 @@ GROUP  BY adm0_a3, country
 HAVING COUNT(*) >= 40
 ORDER  BY country;"""
 
-COUNTRY_SERIES = """-- One country's annual anomaly next to the global mean
-WITH global AS (
+# The selected countries and the global mean as one long table (UNION ALL), so one window
+# function smooths every series: PARTITION BY code restarts the moving average per series.
+_COMPARE_SERIES = """WITH global AS (
     SELECT year, AVG(anomaly) AS anomaly
     FROM   v_monthly
     WHERE  region = 'GLB'
     GROUP  BY year
     HAVING COUNT(anomaly) = 12
-)
-SELECT c.year,
-       ROUND(c.anomaly::numeric, 2)  AS country,
-       ROUND(g.anomaly, 2)           AS global,
-       ROUND(c.coverage::numeric, 2) AS coverage
-FROM   v_country_annual c
-JOIN   global g USING (year)
-WHERE  c.adm0_a3 = %(country)s
-ORDER  BY c.year;"""
+),
+series AS (
+    SELECT adm0_a3 AS code, country AS name, year, anomaly::numeric AS anomaly
+    FROM   v_country_annual
+    WHERE  adm0_a3 = ANY(%(countries)s)
+    UNION ALL
+    SELECT 'GLB', 'Global mean', year, anomaly
+    FROM   global
+)"""
+
+COUNTRY_COMPARE = f"""-- Annual anomaly of the selected countries and the global mean, with a 5-year moving average
+{_COMPARE_SERIES}
+SELECT code,
+       name,
+       year,
+       ROUND(anomaly, 2) AS anomaly,
+       ROUND(AVG(anomaly) OVER (PARTITION BY code ORDER BY year
+                                ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING), 2) AS moving_avg_5y
+FROM   series
+ORDER  BY code, year;"""
+
+COUNTRY_COMPARE_STATS = f"""-- Warming rate since 1970 and mean of the last 10 years, per series
+{_COMPARE_SERIES}
+SELECT code,
+       name,
+       ROUND((regr_slope(anomaly, year) FILTER (WHERE year >= 1970) * 10)::numeric, 3) AS rate_since_1970,
+       ROUND(AVG(anomaly) FILTER (WHERE year > (SELECT MAX(year) FROM global) - 10), 2) AS mean_last_10y
+FROM   series
+GROUP  BY code, name
+ORDER  BY rate_since_1970 DESC;"""
 
 SCHEMA = """SELECT table_name, column_name, data_type
 FROM   information_schema.columns
