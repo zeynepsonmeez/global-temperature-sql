@@ -100,7 +100,7 @@ def render_globe(fig: go.Figure) -> None:
     components.html(html, height=370)
 
 
-hero, globe = st.columns([1.05, 1], gap="large", vertical_alignment="center")
+hero, globe = st.columns([1.3, 1], gap="large", vertical_alignment="center")
 with hero:
     st.markdown(f'<span class="gts-badge">{t("home.badge")}</span>', unsafe_allow_html=True)
     st.markdown('<div class="gts-hero">Query the Data.<br><span>Understand the Climate.</span></div>',

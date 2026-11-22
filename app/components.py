@@ -43,8 +43,8 @@ def page_style() -> None:
           .block-container, [data-testid="stMainBlockContainer"] { padding-top: 3.2rem; max-width: 1280px; }
           /* The EN/TR switch sits in the top bar instead of taking a row of every page. */
           .st-key-lang_toggle { position: fixed; top: 0.55rem; right: 3.4rem; z-index: 999991; width: auto !important; }
-          /* Orange top bar with white navigation on both themes. */
-          [data-testid="stHeader"] { background: #EA580C; }
+          /* Top bar in the accent of the buttons, sliders and tabs (primaryColor), white navigation. */
+          [data-testid="stHeader"] { background: #C2410C; }
           [data-testid="stTopNavLink"], [data-testid="stTopNavLink"] *,
           [data-testid="stMainMenuButton"], [data-testid="stMainMenuButton"] * { color: #FFFFFF !important; }
           [data-testid="stTopNavLink"]:hover { background: rgba(255, 255, 255, 0.16) !important; }
@@ -52,7 +52,7 @@ def page_style() -> None:
             background: rgba(255, 255, 255, 0.24) !important; }
           .st-key-lang_toggle button { background: transparent !important; color: #FFFFFF !important;
                                        border-color: rgba(255, 255, 255, 0.7) !important; }
-          .st-key-lang_toggle button[aria-checked="true"] { background: #FFFFFF !important; color: #EA580C !important;
+          .st-key-lang_toggle button[aria-checked="true"] { background: #FFFFFF !important; color: #C2410C !important;
                                                             border-color: #FFFFFF !important; }
           .st-key-lang_toggle button * { color: inherit !important; }
           @media (max-width: 640px) {
@@ -62,7 +62,7 @@ def page_style() -> None:
           .stTextArea textarea { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
                                  font-size: 0.9rem; line-height: 1.55; }
           h1, h2, h3 { letter-spacing: -0.02em; }
-          .gts-hero { font-size: 3.2rem; line-height: 1.05; font-weight: 700; margin: 0.4rem 0 1rem; color: inherit; }
+          .gts-hero { font-size: 3.6rem; line-height: 1.08; font-weight: 700; margin: 0.4rem 0 1rem; color: inherit; }
           .gts-hero span { color: #EA580C; }
           .gts-badge { display: inline-block; font-size: 0.8rem; font-weight: 600; color: #EA580C;
                        background: rgba(234, 88, 12, 0.12); border: 1px solid rgba(234, 88, 12, 0.35);
