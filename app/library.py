@@ -7,10 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 SQL_DIR = Path(__file__).resolve().parent.parent / "sql"
-FILES = [("basic", "Basic"), ("intermediate", "Intermediate"), ("advanced", "Advanced"), ("spatial", "Spatial")]
+FILES = [("basic", "Basic"), ("intermediate", "Intermediate"), ("advanced", "Advanced"),
+         ("spatial", "Spatial"), ("drivers", "Drivers")]
 
 # A query block starts with a header comment such as "-- B1. The 10 hottest months ..."
-HEADER = re.compile(r"^-- ([BIAS]\d+)\. (.+)$", re.MULTILINE)
+HEADER = re.compile(r"^-- ([BIASD]\d+)\. (.+)$", re.MULTILINE)
 
 
 @dataclass(frozen=True)
