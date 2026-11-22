@@ -8,7 +8,7 @@ library of 78 SQL analyses, a measured indexing and partitioning study, a regres
 El Niño and the warming trend with autocorrelation-robust uncertainty, a Streamlit app with
 interactive maps and charts, and a secure SQL Playground.
 
-![CI](https://github.com/OWNER/global-temperature-sql/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/zeynepsonmeez/global-temperature-sql/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.13-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791)
 ![PostGIS](https://img.shields.io/badge/PostGIS-3.6-5a8f29)
