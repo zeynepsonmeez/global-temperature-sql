@@ -118,3 +118,59 @@ WHERE  kind IN ('zonal', 'zonal_wide')
   AND  code LIKE '%N%'
   AND  lat_min >= 0
 ORDER  BY lat_max DESC, lat_min DESC;
+
+
+-- B11. How many distinct years and months does each region cover? (COUNT DISTINCT)
+-- COUNT(*) counts rows; COUNT(DISTINCT year) counts different years among them.
+SELECT region,
+       COUNT(*)              AS months,
+       COUNT(DISTINCT year)  AS years,
+       MIN(obs_date)         AS first_month,
+       MAX(obs_date)         AS last_month
+FROM   v_monthly
+GROUP  BY region
+ORDER  BY region;
+
+
+-- B12. Every month of 2024 at or above +1.3 °C (BETWEEN on dates)
+-- BETWEEN is inclusive on both ends: 2024-01-01 and 2024-12-01 are both included.
+SELECT obs_date, anomaly
+FROM   v_monthly
+WHERE  region = 'GLB'
+  AND  obs_date BETWEEN DATE '2024-01-01' AND DATE '2024-12-01'
+  AND  anomaly >= 1.3
+ORDER  BY obs_date;
+
+
+-- B13. The 11th to 20th hottest years (LIMIT with OFFSET — paging through a ranking)
+-- OFFSET 10 skips the first ten rows; the ORDER BY must be deterministic for paging to work.
+SELECT year,
+       ROUND(AVG(anomaly), 2) AS annual_anomaly
+FROM   v_monthly
+WHERE  region = 'GLB'
+GROUP  BY year
+HAVING COUNT(anomaly) = 12
+ORDER  BY annual_anomaly DESC, year DESC
+LIMIT  10 OFFSET 10;
+
+
+-- B14. The same anomalies in Fahrenheit (arithmetic and column aliases)
+-- An anomaly is a temperature DIFFERENCE: multiply by 1.8, do not add 32.
+SELECT year,
+       month,
+       anomaly                    AS anomaly_c,
+       ROUND(anomaly * 1.8, 2)    AS anomaly_f
+FROM   v_monthly
+WHERE  region = 'GLB' AND year = 2024
+ORDER  BY month;
+
+
+-- B15. Missing values per region (COUNT of a column vs COUNT(*), and COALESCE)
+-- COUNT(anomaly) skips NULLs, so COUNT(*) - COUNT(anomaly) is the number of missing months.
+-- COALESCE replaces a NULL with a fallback — here only for display.
+SELECT region,
+       COUNT(*) - COUNT(anomaly)                        AS missing_months,
+       COALESCE(MIN(anomaly)::text, 'no data')          AS coldest_value
+FROM   v_monthly
+GROUP  BY region
+ORDER  BY region;

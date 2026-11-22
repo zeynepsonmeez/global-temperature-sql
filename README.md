@@ -4,7 +4,7 @@
 
 An interactive SQL-powered platform for exploring historical global temperature anomalies from
 NASA GISTEMP v4 — a PostgreSQL/PostGIS database with **25 million gridded observations**, a
-library of 56 SQL analyses, a measured indexing and partitioning study, a regression analysis of
+library of 78 SQL analyses, a measured indexing and partitioning study, a regression analysis of
 El Niño and the warming trend with autocorrelation-robust uncertainty, a Streamlit app with
 interactive maps and charts, and a secure SQL Playground.
 
@@ -37,7 +37,7 @@ removing ENSO, the breakpoint when warming accelerated, the Keeling CO₂ curve,
 Newey-West confidence intervals side by side. Methods: [`docs/METHODS.md`](docs/METHODS.md).
 
 **SQL Playground** — write and run read-only SQL against the real database (including PostGIS
-functions): schema browser, 56 sample queries (basic → advanced → spatial → drivers), result table with
+functions): schema browser, 78 sample queries (basic → advanced → spatial → drivers), result table with
 timing, CSV export, quick charts and five **challenges** checked automatically against a
 reference query.
 
@@ -182,11 +182,11 @@ the NetCDF file exactly.
 
 | File | Queries | Topics |
 |---|---:|---|
-| [`basic_queries.sql`](sql/basic_queries.sql) | 10 | SELECT, WHERE, ORDER BY, NULLS LAST, GROUP BY, HAVING, aggregates, LIKE |
-| [`intermediate_queries.sql`](sql/intermediate_queries.sql) | 11 | CTEs, self-join, LEFT JOIN, subqueries, EXISTS, UNION ALL, CASE, FILTER, dates |
-| [`advanced_queries.sql`](sql/advanced_queries.sql) | 16 | RANK / DENSE_RANK / ROW_NUMBER, LAG / LEAD, ROWS vs RANGE windows, NTILE, gaps-and-islands, LATERAL, ROLLUP, regr_slope, corr, percentile_cont |
-| [`spatial_queries.sql`](sql/spatial_queries.sql) | 10 | Spatial joins, ST_Contains, KNN `<->`, ST_Area on geography, area weighting, DISTINCT ON |
-| [`drivers_queries.sql`](sql/drivers_queries.sql) | 9 | Detrending with regr_slope / regr_intercept, lagged joins with make_interval, correlation over generated lags, growth rates |
+| [`basic_queries.sql`](sql/basic_queries.sql) | 15 | SELECT, WHERE, ORDER BY, NULLS LAST, GROUP BY, HAVING, aggregates, LIKE |
+| [`intermediate_queries.sql`](sql/intermediate_queries.sql) | 16 | CTEs, self-join, LEFT JOIN, subqueries, EXISTS, UNION ALL, CASE, FILTER, dates |
+| [`advanced_queries.sql`](sql/advanced_queries.sql) | 22 | RANK / DENSE_RANK / ROW_NUMBER, LAG / LEAD, ROWS vs RANGE windows, NTILE, gaps-and-islands, LATERAL, ROLLUP, regr_slope, corr, percentile_cont |
+| [`spatial_queries.sql`](sql/spatial_queries.sql) | 13 | Spatial joins, ST_Contains, KNN `<->`, ST_Area on geography, area weighting, DISTINCT ON |
+| [`drivers_queries.sql`](sql/drivers_queries.sql) | 12 | Detrending with regr_slope / regr_intercept, lagged joins with make_interval, correlation over generated lags, growth rates |
 
 Every query is commented, available in the Playground and runs in CI.
 

@@ -181,3 +181,58 @@ SELECT break_year,
 FROM   model_breakpoints
 ORDER  BY sse
 LIMIT  5;
+
+
+-- D10. The longest runs of El Niño and La Niña months (gaps and islands on a category)
+-- Same trick as A10: inside one unbroken run, the two row numbers differ by a constant.
+WITH runs AS (
+    SELECT obs_date,
+           phase,
+           ROW_NUMBER() OVER (ORDER BY obs_date)
+         - ROW_NUMBER() OVER (PARTITION BY phase ORDER BY obs_date) AS run_id
+    FROM   v_enso
+)
+SELECT phase,
+       MIN(obs_date) AS run_start,
+       MAX(obs_date) AS run_end,
+       COUNT(*)      AS months
+FROM   runs
+WHERE  phase <> 'Neutral'
+GROUP  BY phase, run_id
+ORDER  BY months DESC, run_start ASC
+LIMIT  6;
+
+
+-- D11. The yearly "breathing" of the planet: CO2's seasonal cycle by calendar month
+-- Monthly minus seasonally adjusted CO2 isolates the cycle: northern forests take up CO2
+-- in summer and release it in winter.
+SELECT EXTRACT(MONTH FROM obs_date)::int    AS month,
+       ROUND(AVG(co2_ppm - co2_deseason), 2) AS seasonal_ppm
+FROM   v_co2
+WHERE  obs_date >= DATE '2000-01-01'
+GROUP  BY EXTRACT(MONTH FROM obs_date)
+ORDER  BY month;
+
+
+-- D12. Strong El Niño peaks and the global temperature of the FOLLOWING year (LEAD)
+-- Global temperature tends to peak in the year after a strong El Niño winter.
+WITH annual AS (
+    SELECT year, AVG(anomaly) AS anomaly
+    FROM   v_monthly
+    WHERE  region = 'GLB'
+    GROUP  BY year
+    HAVING COUNT(anomaly) = 12
+),
+peaks AS (
+    SELECT EXTRACT(YEAR FROM obs_date)::int AS year, MAX(oni) AS peak_oni
+    FROM   v_enso
+    GROUP  BY EXTRACT(YEAR FROM obs_date)
+)
+SELECT p.year,
+       p.peak_oni,
+       ROUND(a.anomaly, 2)                                   AS anomaly_same_year,
+       ROUND(LEAD(a.anomaly) OVER (ORDER BY a.year), 2)      AS anomaly_next_year
+FROM   peaks p
+JOIN   annual a USING (year)
+ORDER  BY p.peak_oni DESC
+LIMIT  6;

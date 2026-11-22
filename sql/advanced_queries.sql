@@ -338,3 +338,122 @@ FROM   v_monthly
 WHERE  region = 'GLB'
 ORDER  BY obs_date DESC
 LIMIT  12;
+
+
+-- A17. The chain of record years, followed step by step (recursive CTE)
+-- The anchor picks the first year; the recursive part repeatedly jumps to the next year
+-- that beats the current record, until none is left.
+WITH RECURSIVE annual AS (
+    SELECT year, AVG(anomaly) AS anomaly
+    FROM   v_monthly
+    WHERE  region = 'GLB'
+    GROUP  BY year
+    HAVING COUNT(anomaly) = 12
+),
+chain AS (
+    SELECT a.year, a.anomaly, 1 AS step
+    FROM   annual a
+    WHERE  a.year = (SELECT MIN(first.year) FROM annual first)
+    UNION ALL
+    SELECT nxt.year, nxt.anomaly, c.step + 1 AS step
+    FROM   chain c
+    CROSS  JOIN LATERAL (
+            SELECT a.year, a.anomaly
+            FROM   annual a
+            WHERE  a.year > c.year AND a.anomaly > c.anomaly
+            ORDER  BY a.year
+            LIMIT  1
+           ) nxt
+)
+SELECT step, year, ROUND(anomaly, 2) AS record_anomaly
+FROM   chain
+ORDER  BY step;
+
+
+-- A18. Warming within each decade: first vs last year (FIRST_VALUE / LAST_VALUE)
+-- LAST_VALUE needs the frame to reach the end of the partition; the default frame stops
+-- at the current row, which is a classic window-function trap.
+WITH annual AS (
+    SELECT year, AVG(anomaly) AS anomaly
+    FROM   v_monthly
+    WHERE  region = 'GLB'
+    GROUP  BY year
+    HAVING COUNT(anomaly) = 12
+)
+SELECT DISTINCT
+       (year / 10) * 10 AS decade,
+       FIRST_VALUE(ROUND(anomaly, 2)) OVER w AS first_year_anomaly,
+       LAST_VALUE(ROUND(anomaly, 2))  OVER w AS last_year_anomaly
+FROM   annual
+WINDOW w AS (PARTITION BY year / 10 ORDER BY year
+             ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+ORDER  BY decade DESC
+LIMIT  8;
+
+
+-- A19. Each year against its own 30-year "climate normal" (a 30-row trailing window)
+-- Climatologists compare a year with the mean of the 30 years before it.
+WITH annual AS (
+    SELECT year, AVG(anomaly) AS anomaly
+    FROM   v_monthly
+    WHERE  region = 'GLB'
+    GROUP  BY year
+    HAVING COUNT(anomaly) = 12
+),
+normals AS (
+    SELECT year,
+           anomaly,
+           AVG(anomaly) OVER (ORDER BY year ROWS BETWEEN 30 PRECEDING AND 1 PRECEDING) AS normal_30y,
+           COUNT(*)     OVER (ORDER BY year ROWS BETWEEN 30 PRECEDING AND 1 PRECEDING) AS years_in_normal
+    FROM   annual
+)
+SELECT year,
+       ROUND(anomaly, 2)               AS anomaly,
+       ROUND(normal_30y, 2)            AS previous_30y_mean,
+       ROUND(anomaly - normal_30y, 2)  AS above_normal
+FROM   normals
+WHERE  years_in_normal = 30
+ORDER  BY year DESC
+LIMIT  10;
+
+
+-- A20. Several groupings in one query (GROUPING SETS)
+-- One pass returns the mean per hemisphere, per period, and per hemisphere AND period.
+SELECT region,
+       CASE WHEN year < 1950 THEN '1880-1949'
+            WHEN year < 2000 THEN '1950-1999'
+            ELSE '2000-' END     AS period,
+       ROUND(AVG(anomaly), 2)    AS mean_anomaly
+FROM   v_monthly
+WHERE  region IN ('NH', 'SH')
+GROUP  BY GROUPING SETS (
+       (region),
+       (CASE WHEN year < 1950 THEN '1880-1949' WHEN year < 2000 THEN '1950-1999' ELSE '2000-' END),
+       (region, CASE WHEN year < 1950 THEN '1880-1949' WHEN year < 2000 THEN '1950-1999' ELSE '2000-' END)
+)
+ORDER  BY region NULLS LAST, period NULLS LAST;
+
+
+-- A21. A histogram of monthly anomalies, before and after 1980 (width_bucket)
+-- width_bucket(value, low, high, n) returns which of n equal bins a value falls into.
+SELECT width_bucket(anomaly, -1.0, 2.0, 12)                        AS bin,
+       ROUND(-1.0 + (width_bucket(anomaly, -1.0, 2.0, 12) - 1) * 0.25, 2) AS from_c,
+       COUNT(*) FILTER (WHERE year < 1980)                         AS months_before_1980,
+       COUNT(*) FILTER (WHERE year >= 1980)                        AS months_since_1980
+FROM   v_monthly
+WHERE  region = 'GLB'
+GROUP  BY bin
+ORDER  BY bin;
+
+
+-- A22. Is the climate also getting more variable? (stddev_samp per decade)
+-- The spread of monthly values around each decade's own mean. The trend inside a decade
+-- adds a little to it, so a rising spread is a hint, not proof, of larger variability.
+SELECT (year / 10) * 10                             AS decade,
+       ROUND(AVG(anomaly), 2)                       AS mean_anomaly,
+       ROUND(stddev_samp(anomaly), 3)               AS std_dev,
+       ROUND(MAX(anomaly) - MIN(anomaly), 2)        AS range_c
+FROM   v_monthly
+WHERE  region = 'GLB'
+GROUP  BY decade
+ORDER  BY decade;

@@ -164,3 +164,48 @@ SELECT o.year,
 FROM   official o JOIN grid g USING (year)
 ORDER  BY o.year DESC
 LIMIT  10;
+
+
+-- S11. Grid cells within 500 km of Istanbul, and their mean anomaly in 2025 (ST_DWithin)
+-- ST_DWithin on geography measures real distance in metres on the sphere and can use an index.
+SELECT g.cell_id,
+       g.lat,
+       g.lon,
+       ROUND((ST_Distance(ST_Centroid(g.geom)::geography,
+                          ST_SetSRID(ST_MakePoint(28.98, 41.01), 4326)::geography) / 1000)::numeric) AS km,
+       ROUND(a.anomaly::numeric, 2) AS anomaly_2025
+FROM   grid_cells g
+JOIN   v_grid_annual a ON a.cell_id = g.cell_id AND a.year = 2025
+WHERE  ST_DWithin(ST_Centroid(g.geom)::geography,
+                  ST_SetSRID(ST_MakePoint(28.98, 41.01), 4326)::geography, 500000)
+ORDER  BY km;
+
+
+-- S12. How much of each latitude band is land? (area-weighted share of cells over countries)
+-- The Northern Hemisphere bands are far more "land" — one reason they warm faster.
+WITH land AS (
+    SELECT cc.cell_id, LEAST(SUM(cc.overlap_km2) / (ST_Area(MAX(g.geom)::geography) / 1e6), 1) AS share
+    FROM   cell_countries cc
+    JOIN   grid_cells g USING (cell_id)
+    GROUP  BY cc.cell_id
+)
+SELECT r.code,
+       ROUND((100 * SUM(COALESCE(l.share, 0) * g.area_weight) / SUM(g.area_weight))::numeric, 1) AS land_pct
+FROM   regions r
+JOIN   grid_cells g ON g.lat BETWEEN r.lat_min AND r.lat_max
+LEFT   JOIN land l USING (cell_id)
+WHERE  r.kind = 'zonal'
+GROUP  BY r.code, r.lat_max
+ORDER  BY r.lat_max DESC;
+
+
+-- S13. The largest country of each continent (ROW_NUMBER over ST_Area)
+SELECT continent, name, ROUND(area_km2) AS area_km2
+FROM  (SELECT continent,
+              name,
+              ST_Area(geom::geography) / 1e6 AS area_km2,
+              ROW_NUMBER() OVER (PARTITION BY continent ORDER BY ST_Area(geom::geography) DESC) AS rn
+       FROM   countries
+       WHERE  continent <> 'Seven seas (open ocean)') ranked
+WHERE  rn = 1
+ORDER  BY area_km2 DESC;

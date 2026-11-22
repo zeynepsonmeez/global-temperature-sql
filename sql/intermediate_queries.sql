@@ -204,3 +204,74 @@ FROM   v_monthly
 WHERE  obs_date > (SELECT MAX(latest.obs_date) FROM v_monthly latest) - INTERVAL '12 months'
 GROUP  BY region
 ORDER  BY region;
+
+
+-- I12. Years in the top 20 of BOTH hemispheres (INTERSECT)
+-- INTERSECT keeps only rows returned by both queries — a set operation, like UNION.
+WITH annual AS (
+    SELECT region, year, AVG(anomaly) AS anomaly
+    FROM   v_monthly
+    WHERE  region IN ('NH', 'SH')
+    GROUP  BY region, year
+    HAVING COUNT(anomaly) = 12
+)
+(SELECT year FROM annual WHERE region = 'NH' ORDER BY anomaly DESC LIMIT 20)
+INTERSECT
+(SELECT year FROM annual WHERE region = 'SH' ORDER BY anomaly DESC LIMIT 20)
+ORDER BY year;
+
+
+-- I13. Hot years that did NOT start with an El Niño winter (EXCEPT)
+-- EXCEPT removes from the first result every row that appears in the second one.
+WITH top_years AS (
+    SELECT year
+    FROM   v_monthly
+    WHERE  region = 'GLB'
+    GROUP  BY year
+    HAVING COUNT(anomaly) = 12
+    ORDER  BY AVG(anomaly) DESC
+    LIMIT  15
+)
+SELECT year FROM top_years
+EXCEPT
+SELECT EXTRACT(YEAR FROM obs_date)::smallint FROM v_enso WHERE season = 'DJF' AND phase = 'El Nino'
+ORDER  BY year;
+
+
+-- I14. Decades without a single month below the baseline (NOT EXISTS — an anti-join)
+-- NOT EXISTS keeps a decade only if the subquery finds no cool month in it.
+WITH decades AS (
+    SELECT DISTINCT (year / 10) * 10 AS decade FROM v_monthly WHERE region = 'GLB'
+)
+SELECT d.decade
+FROM   decades d
+WHERE  NOT EXISTS (
+        SELECT 1
+        FROM   v_monthly m
+        WHERE  m.region = 'GLB'
+          AND  m.year BETWEEN d.decade AND d.decade + 9
+          AND  m.anomaly < 0
+       )
+ORDER  BY d.decade;
+
+
+-- I15. The single hottest month of each region (DISTINCT ON)
+-- DISTINCT ON (region) keeps the FIRST row per region in the ORDER BY order — a
+-- PostgreSQL shortcut for "top 1 per group" without a window function.
+SELECT DISTINCT ON (region)
+       region, obs_date, anomaly
+FROM   v_monthly
+WHERE  anomaly IS NOT NULL
+ORDER  BY region ASC, anomaly DESC;
+
+
+-- I16. A month-by-year table for the last three complete years (pivot with FILTER)
+-- Each output column aggregates only the rows of one year: rows become columns.
+SELECT month,
+       MAX(anomaly) FILTER (WHERE year = 2023) AS y2023,
+       MAX(anomaly) FILTER (WHERE year = 2024) AS y2024,
+       MAX(anomaly) FILTER (WHERE year = 2025) AS y2025
+FROM   v_monthly
+WHERE  region = 'GLB' AND year BETWEEN 2023 AND 2025
+GROUP  BY month
+ORDER  BY month;
