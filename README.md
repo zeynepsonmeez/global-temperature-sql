@@ -12,6 +12,9 @@ interactive maps and charts, and a secure SQL Playground.
 ![Python](https://img.shields.io/badge/python-3.13-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791)
 ![PostGIS](https://img.shields.io/badge/PostGIS-3.6-5a8f29)
+![Coverage](https://img.shields.io/badge/coverage-94%25-brightgreen)
+![Ruff](https://img.shields.io/badge/lint-ruff-261230)
+![SQLFluff](https://img.shields.io/badge/SQL-sqlfluff-c22e2e)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
@@ -135,8 +138,23 @@ python scripts/run_models.py           # regression, ENSO-adjusted series, break
 
 # 5. Run
 streamlit run app/main.py              # http://localhost:8501
-pytest                                 # 181 tests
+pytest                                 # 186 tests
 python scripts/benchmark.py            # optional: re-run the performance study
+```
+
+**Run the app in Docker instead** (after step 4 — the pipeline writes the data, the container
+only reads it through the read-only role):
+
+```bash
+docker compose --profile app up -d --build   # http://localhost:8501
+```
+
+**Development setup** — linters, git hooks and coverage:
+
+```bash
+pip install -r requirements-dev.txt
+pre-commit install                     # ruff, sqlfluff and file checks before every commit
+pytest --cov                           # coverage of app/ and scripts/
 ```
 
 ## Database
@@ -178,6 +196,17 @@ The Playground has two independent layers: a sqlglot-based validator and a Postg
 can only read the playground views and PostGIS functions, cannot write or create anything, and
 is stopped after 3 seconds. See [`docs/SECURITY.md`](docs/SECURITY.md).
 
+## Code quality
+
+- **ruff** lints all Python (pycodestyle, pyflakes, import order, bugbear, pyupgrade).
+- **sqlfluff** lints the SQL library; the rules that are switched off are style choices,
+  each justified in [`.sqlfluff`](.sqlfluff).
+- **pre-commit** runs both plus file checks (large files, private keys, merge conflicts)
+  before every commit; raw data files are excluded so their checksums never change.
+- **Coverage** is measured across the whole pipeline: CI runs every pipeline script under
+  `coverage run`, then the test suite, and fails below 85% (currently 94%).
+- **Design decisions** are recorded as [architecture decision records](docs/adr/).
+
 ## Testing
 
 | Suite | Tests | Covers |
@@ -185,6 +214,7 @@ is stopped after 3 seconds. See [`docs/SECURITY.md`](docs/SECURITY.md).
 | `test_clean_data.py` | 13 | Parsing, `***` → NULL, long format, NASA J-D match, baseline check |
 | `test_database.py` | 16 | Row counts, SQL annual mean = NASA J-D, constraints, keys, SQL library runs |
 | `test_grid.py` | 9 | Area weights, valid geometry, lossless storage, grid = NASA global mean, partition pruning |
+| `test_run_models.py` | 5 | Newey-West bandwidth, breakpoint recovered from a synthetic series, lag alignment |
 | `test_drivers.py` | 10 | ONI season mapping, NULL sentinels, model signs, Newey-West wider than classical |
 | `test_sql_guard.py` | 36 | 24 attack queries blocked, all library queries allowed |
 | `test_reader_role.py` | 10 | Database-level protection without the validator |
@@ -192,8 +222,9 @@ is stopped after 3 seconds. See [`docs/SECURITY.md`](docs/SECURITY.md).
 | `test_challenges.py` | 15 | Challenge references and the answer checker |
 | `test_app.py` | 16 | Every page renders in both languages; Playground runs and blocks queries |
 
-GitHub Actions builds the database on PostGIS, loads the series, a grid subset and the drivers,
-runs the models and all tests on every push.
+GitHub Actions runs two jobs on every push: **lint** (ruff, sqlfluff) and **test**, which builds
+the database on PostGIS, runs the whole pipeline under coverage (with a grid subset), then all
+tests, and writes the coverage table to the job summary.
 
 ## Project structure
 
@@ -203,9 +234,12 @@ data/raw/           NASA series snapshot + manifests (grid files are downloaded)
 data/processed/     cleaned CSVs (generated)
 database/           schema.sql, spatial_schema.sql, drivers_schema.sql, roles.sql
 docs/               DATA.md, METHODS.md, PERFORMANCE.md (+ benchmark_results.json), SECURITY.md
+docs/adr/           architecture decision records
 scripts/            download, clean, load, grid, drivers, models, setup and benchmark scripts
 sql/                SQL analysis library
 tests/              pytest suites
+Dockerfile          image for the Streamlit app (docker compose --profile app)
+requirements*.txt   app only / app + pipeline + tests / + dev tools
 ```
 
 ## Data sources and license

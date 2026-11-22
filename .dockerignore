@@ -1,0 +1,8 @@
+# Allow-list: only what the app image needs is sent to the build. Everything else —
+# including .env, data, the virtual environment and the git history — stays out.
+*
+!requirements-app.txt
+!app/
+!sql/
+!.streamlit/
+**/__pycache__

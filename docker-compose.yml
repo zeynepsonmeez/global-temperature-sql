@@ -38,5 +38,26 @@ services:
       timeout: 3s
       retries: 10
 
+  # The Streamlit app as a container (optional): docker compose --profile app up -d --build
+  # Load the data first (scripts/setup_database.py and the load_*.py scripts).
+  app:
+    build: .
+    image: global-temperature-sql-app
+    container_name: gts-app
+    profiles: ["app"]
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Inside the Compose network the database is "db" on its internal port 5432.
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_READER_USER: ${POSTGRES_READER_USER:-gts_reader}
+      POSTGRES_READER_PASSWORD: ${POSTGRES_READER_PASSWORD}
+    ports:
+      - "127.0.0.1:${APP_PORT:-8501}:8501"
+
 volumes:
   pgdata:
