@@ -21,6 +21,16 @@ if "pg_pending_sql" in st.session_state:          # arriving from "Open in Playg
     st.session_state["pg_result"] = st.session_state["pg_error"] = None
 
 
+LEVELS = ["Basic", "Intermediate", "Advanced", "Spatial", "Drivers"]
+# Playground views grouped by topic, in a sensible reading order.
+SCHEMA_GROUPS = {
+    "pg.schema.series": ["v_monthly", "v_annual", "regions", "datasets"],
+    "pg.schema.spatial": ["v_grid", "v_grid_annual", "v_grid_trends", "v_country_annual",
+                          "grid_cells", "countries", "cell_countries"],
+    "pg.schema.drivers": ["v_enso", "v_co2", "model_results", "model_enso_adjusted", "model_breakpoints"],
+}
+
+
 def load_sample() -> None:
     choice = st.session_state.get("pg_sample")
     if choice:
@@ -28,26 +38,26 @@ def load_sample() -> None:
 
 
 st.title(t("nav.playground"))
-left, center, right = st.columns([1, 2.6, 1.15], gap="medium")
+left, center, right = st.columns([1.05, 2.6, 1.15], gap="medium")
 
-# --- Left: schema browser and sample queries ----------------------------------------------
+# --- Left: sample queries first (the usual starting point), then the schema ---------------------
 with left:
+    with st.container(border=True):
+        st.markdown(f"**{t('pg.samples')}** · {len(samples)}")
+        level = st.pills(t("pg.level"), LEVELS, default="Basic", key="pg_level",
+                         format_func=lambda name: t(f"pg.level.{name.lower()}"), label_visibility="collapsed")
+        in_level = [s.label for s in samples if s.level == (level or "Basic")]
+        st.selectbox(t("pg.samples.pick"), in_level, index=None, key="pg_sample", on_change=load_sample,
+                     placeholder=t("pg.samples.pick"), label_visibility="collapsed")
+
     with st.container(border=True):
         st.markdown(f"**{t('pg.schema')}**")
         schema = read_df(q.SCHEMA)
-        for table, columns in schema.groupby("table_name", sort=True):
-            with st.expander(table, expanded=table == "v_monthly"):
-                pairs = zip(columns.column_name, columns.data_type, strict=True)
-                st.markdown("\n".join(f"- `{c}` · {d}" for c, d in pairs))
-    with st.container(border=True):
-        st.markdown(f"**{t('pg.samples')}**")
-        st.selectbox(
-            t("pg.samples.pick"), list(sample_by_label), index=None, key="pg_sample",
-            on_change=load_sample, placeholder=f"{len(samples)} …", label_visibility="collapsed",
-        )
-        for level in ("Basic", "Intermediate", "Advanced", "Spatial", "Drivers"):
-            count = sum(1 for s in samples if s.level == level)
-            st.caption(f"{level}: {count}")
+        columns_of = {table: ", ".join(group.column_name) for table, group in schema.groupby("table_name")}
+        for group_key, tables in SCHEMA_GROUPS.items():
+            with st.expander(t(group_key), expanded=group_key == "pg.schema.series"):
+                st.markdown("\n\n".join(f"**`{name}`**  \n{columns_of[name]}"
+                                        for name in tables if name in columns_of))
 
 # --- Center: editor and results --------------------------------------------------------------
 with center:

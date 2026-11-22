@@ -1,4 +1,4 @@
-"""Home page: hero, rotatable latitude-band globe, dataset facts and the two entry points."""
+"""Home page: hero, rotatable latitude-band globe, dataset facts and a card for every page."""
 
 import numpy as np
 import plotly.graph_objects as go
@@ -8,6 +8,7 @@ import queries as q
 from components import COAST, GRID, LAND, OCEAN, WARM_SCALE, footer
 from database import read_df, read_row
 from i18n import month_names, t
+from library import load_samples
 
 bands = read_df(q.GLOBE)
 facts = read_row(q.FACTS)
@@ -53,9 +54,11 @@ with hero:
                 unsafe_allow_html=True)
     st.markdown(f'<p class="gts-muted" style="font-size:1.15rem;line-height:1.6">{t("home.sub")}</p>',
                 unsafe_allow_html=True)
-    a, b = st.columns(2)
-    a.page_link("views/explorer.py", label=t("home.exp.cta"), icon=":material/monitoring:")
-    b.page_link("views/playground.py", label=t("home.pg.cta"), icon=":material/terminal:")
+    a, b, _ = st.columns([1, 1, 0.4])
+    if a.button(t("home.exp.cta"), type="primary", icon=":material/monitoring:", width="stretch"):
+        st.switch_page("views/explorer.py")
+    if b.button(t("home.pg.cta"), icon=":material/terminal:", width="stretch"):
+        st.switch_page("views/playground.py")
 
 with globe, st.container(border=True):
     st.markdown(f"**{t('home.globe.title')}**")
@@ -86,19 +89,19 @@ else:
     c3.info(f"**{findings.top10_since_2015} of the 10** hottest years occurred in 2015 or later.")
 
 st.subheader(t("home.choose"))
-left, right = st.columns(2, gap="large")
-with left, st.container(border=True):
-    st.markdown("### :material/monitoring: Climate Explorer")
-    st.caption(t("home.exp.sub"))
-    st.write(t("home.exp.desc"))
-    st.page_link("views/explorer.py", label=t("home.exp.cta"), icon=":material/arrow_forward:")
-with right, st.container(border=True):
-    st.markdown("### :material/terminal: SQL Playground")
-    st.caption(t("home.pg.sub"))
-    st.write(t("home.pg.desc"))
-    st.code("SELECT year, anomaly,\n       RANK() OVER (ORDER BY anomaly DESC)\n"
-            "FROM   v_monthly\nWHERE  region = 'GLB'\nLIMIT  10;",
-            language="sql")
-    st.page_link("views/playground.py", label=t("home.pg.cta"), icon=":material/arrow_forward:")
+# One card per page, two per row; the sample count is read from sql/ so it never goes stale.
+CARDS = [
+    ("views/explorer.py", ":material/monitoring:", t("nav.explorer"), "home.exp", {}),
+    ("views/map.py", ":material/map:", t("nav.map"), "home.map", {}),
+    ("views/drivers.py", ":material/insights:", t("nav.drivers"), "home.drv", {}),
+    ("views/playground.py", ":material/terminal:", t("nav.playground"), "home.pg", {"count": len(load_samples())}),
+]
+for row in (CARDS[:2], CARDS[2:]):
+    for column, (page, icon, title, key, values) in zip(st.columns(2, gap="medium"), row, strict=True):
+        with column, st.container(border=True, height="stretch"):
+            st.markdown(f"#### {icon} {title}")
+            st.caption(t(f"{key}.sub"))
+            st.write(t(f"{key}.desc", **values))
+            st.page_link(page, label=t(f"{key}.cta"), icon=":material/arrow_forward:")
 
 footer()

@@ -40,7 +40,12 @@ def page_style() -> None:
     st.markdown(
         """
         <style>
-          .block-container, [data-testid="stMainBlockContainer"] { padding-top: 4.5rem; max-width: 1280px; }
+          .block-container, [data-testid="stMainBlockContainer"] { padding-top: 3.2rem; max-width: 1280px; }
+          /* The EN/TR switch sits in the top bar instead of taking a row of every page. */
+          .st-key-lang_toggle { position: fixed; top: 0.55rem; right: 3.4rem; z-index: 999991; width: auto !important; }
+          @media (max-width: 640px) {
+            .block-container, [data-testid="stMainBlockContainer"] { padding-top: 2.6rem; }
+          }
           [data-testid="stMetricValue"] { font-size: 1.9rem; }
           .stTextArea textarea { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
                                  font-size: 0.9rem; line-height: 1.55; }

@@ -29,3 +29,7 @@ gatherUsageStats = false
 
 [server]
 runOnSave = true
+
+[client]
+# Hide developer controls (Deploy, rerun, clear cache) from visitors; the theme menu stays.
+toolbarMode = "viewer"

@@ -48,9 +48,22 @@ TEXT: dict[str, dict[str, str]] = {
                                   "Her grafik açıp değiştirebileceğiniz bir SQL sorgusundan beslenir."},
     "home.exp.cta":        {"en": "Explore the analyses", "tr": "Analizleri keşfet"},
     "home.pg.sub":         {"en": "Real PostgreSQL, safe and read-only", "tr": "Gerçek PostgreSQL, güvenli ve salt okunur"},
-    "home.pg.desc":        {"en": "37 sample queries from basic to advanced, challenges with automatic checking, "
-                                  "and CSV export.",
-                            "tr": "Temelden ileriye 37 örnek sorgu, otomatik kontrollü görevler ve CSV dışa aktarma."},
+    "home.pg.desc":        {"en": "{count} sample queries from basic SQL to window functions, PostGIS and regression "
+                                  "outputs, challenges with automatic checking, and CSV export.",
+                            "tr": "Temel SQL'den window function'lara, PostGIS'e ve regresyon çıktılarına {count} örnek "
+                                  "sorgu, otomatik kontrollü görevler ve CSV dışa aktarma."},
+    "home.map.sub":        {"en": "25 million gridded values in PostGIS", "tr": "PostGIS'te 25 milyon ızgara değeri"},
+    "home.map.desc":       {"en": "Warming rate of every country on a world map, NASA's 2°×2° grid for any year since "
+                                  "1880, and up to five countries compared with the global mean.",
+                            "tr": "Her ülkenin ısınma hızı dünya haritasında, 1880'den bu yana istediğin yıl için NASA'nın "
+                                  "2°×2° ızgarası ve küresel ortalamayla karşılaştırılan en fazla beş ülke."},
+    "home.map.cta":        {"en": "Open the map", "tr": "Haritayı aç"},
+    "home.drv.sub":        {"en": "El Niño, CO₂ and the warming trend", "tr": "El Niño, CO₂ ve ısınma eğilimi"},
+    "home.drv.desc":       {"en": "A regression separates El Niño from the long-term trend: the warmest years with and "
+                                  "without ENSO, when warming accelerated, and why the confidence interval matters.",
+                            "tr": "Bir regresyon El Niño'yu uzun dönem eğilimden ayırıyor: ENSO ile ve ENSO olmadan en "
+                                  "sıcak yıllar, ısınmanın ne zaman hızlandığı ve güven aralığının neden önemli olduğu."},
+    "home.drv.cta":        {"en": "See the analysis", "tr": "Analizi gör"},
     "home.pg.cta":         {"en": "Start writing SQL", "tr": "Sorgu yazmaya başla"},
     "home.findings":       {"en": "What the data says", "tr": "Veri ne söylüyor?"},
 
@@ -227,12 +240,21 @@ TEXT: dict[str, dict[str, str]] = {
     # --- playground ---------------------------------------------------------------
     "pg.schema":           {"en": "Schema · playground", "tr": "Şema · playground"},
     "pg.samples":          {"en": "Sample queries", "tr": "Örnek sorgular"},
+    "pg.level":            {"en": "Level", "tr": "Seviye"},
+    "pg.level.basic":      {"en": "Basic", "tr": "Temel"},
+    "pg.level.intermediate": {"en": "Intermediate", "tr": "Orta"},
+    "pg.level.advanced":   {"en": "Advanced", "tr": "İleri"},
+    "pg.level.spatial":    {"en": "Spatial", "tr": "Mekânsal"},
+    "pg.level.drivers":    {"en": "Drivers", "tr": "Etkenler"},
+    "pg.schema.series":    {"en": "Temperature series", "tr": "Sıcaklık serileri"},
+    "pg.schema.spatial":   {"en": "Grid and countries (PostGIS)", "tr": "Izgara ve ülkeler (PostGIS)"},
+    "pg.schema.drivers":   {"en": "ENSO, CO₂ and model results", "tr": "ENSO, CO₂ ve model sonuçları"},
     "pg.samples.pick":     {"en": "Load a sample query", "tr": "Örnek sorgu yükle"},
     "pg.editor":           {"en": "SQL query", "tr": "SQL sorgusu"},
     "pg.placeholder":      {"en": "Write your SQL here, or load a sample query from the left…\n\n"
-                                  "Tables: v_monthly, v_annual, regions, datasets",
+                                  "Start with v_monthly (region, year, month, anomaly). Every table is listed under Schema.",
                             "tr": "SQL sorgunuzu buraya yazın ya da soldan bir örnek sorgu yükleyin…\n\n"
-                                  "Tablolar: v_monthly, v_annual, regions, datasets"},
+                                  "v_monthly ile başlayın (region, year, month, anomaly). Tüm tablolar Şema altında."},
     "pg.badges":           {"en": "🔒 Read-only · ⏱ 3 s timeout · max {rows:,} rows",
                             "tr": "🔒 Salt okunur · ⏱ 3 sn zaman aşımı · en fazla {rows:,} satır"},
     "pg.run":              {"en": "Run query", "tr": "Çalıştır"},
@@ -293,10 +315,9 @@ def month_names() -> list[str]:
 
 
 def language_toggle() -> None:
-    """EN / TR switch shown at the top right of every page."""
+    """EN / TR switch, pinned into the top bar of every page by CSS (components.page_style)."""
     current = "TR" if lang() == "tr" else "EN"
-    _, slot = st.columns([10, 1.4])
-    choice = slot.segmented_control(
+    choice = st.segmented_control(
         t("lang.label"), list(LANGUAGES), default=current, key="lang_toggle",
         label_visibility="collapsed",
     )

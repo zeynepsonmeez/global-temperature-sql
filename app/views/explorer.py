@@ -37,11 +37,11 @@ period = {"start": start, "end": end}
 # --- Headline numbers ---------------------------------------------------------------
 kpi = read_row(q.KPIS, {"region": focus})
 k1, k2, k3, k4 = st.columns(4)
-k1.metric(f"{t('kpi.latest')} ({kpi.latest_year})", f"{kpi.latest_anomaly:+.2f} °C")
-k2.metric(t("kpi.rate"), f"{kpi.rate_since_1970:+.2f} {t('unit.decade')}")
+k1.metric(f"{t('kpi.latest')} ({kpi.latest_year})", f"{kpi.latest_anomaly:+.2f} °C", border=True)
+k2.metric(t("kpi.rate"), f"{kpi.rate_since_1970:+.2f} {t('unit.decade')}", border=True)
 k3.metric(t("kpi.hottest"), f"{kpi.hottest_year}", f"{kpi.hottest_anomaly:+.2f} °C",
-          delta_color="off", delta_arrow="off")
-k4.metric(t("kpi.nulls"), f"{kpi.null_months}")
+          delta_color="off", delta_arrow="off", border=True)
+k4.metric(t("kpi.nulls"), f"{kpi.null_months}", border=True)
 st.caption(f"{t(f'region.{focus}')} · GISTEMP v4")
 
 tabs = st.tabs([t("tab.trend"), t("tab.hottest"), t("tab.decades"), t("tab.hemis"),
