@@ -15,11 +15,16 @@ so the query is parsed into a syntax tree and every node is inspected.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 import sqlglot
 from sqlglot import exp
 from sqlglot.errors import ParseError
+
+# sqlglot logs a warning for every statement it cannot model (VACUUM, DO, ...); those are
+# rejected anyway, so the warnings would only fill the app's log.
+logging.getLogger("sqlglot").setLevel(logging.ERROR)
 
 MAX_QUERY_LENGTH = 5_000
 

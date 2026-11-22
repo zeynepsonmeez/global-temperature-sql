@@ -138,7 +138,7 @@ python scripts/run_models.py           # regression, ENSO-adjusted series, break
 
 # 5. Run
 streamlit run app/main.py              # http://localhost:8501
-pytest                                 # 186 tests
+pytest                                 # 421 test cases
 python scripts/benchmark.py            # optional: re-run the performance study
 ```
 
@@ -212,15 +212,23 @@ is stopped after 3 seconds. See [`docs/SECURITY.md`](docs/SECURITY.md).
 | Suite | Tests | Covers |
 |---|---:|---|
 | `test_clean_data.py` | 13 | Parsing, `***` → NULL, long format, NASA J-D match, baseline check |
+| `test_validation.py` | 7 | Every validation rule rejects the problem it is written for |
 | `test_database.py` | 16 | Row counts, SQL annual mean = NASA J-D, constraints, keys, SQL library runs |
 | `test_grid.py` | 9 | Area weights, valid geometry, lossless storage, grid = NASA global mean, partition pruning |
-| `test_run_models.py` | 5 | Newey-West bandwidth, breakpoint recovered from a synthetic series, lag alignment |
+| `test_findings.py` | 9 | Every claim in the Findings table above, recomputed from the database |
 | `test_drivers.py` | 10 | ONI season mapping, NULL sentinels, model signs, Newey-West wider than classical |
-| `test_sql_guard.py` | 36 | 24 attack queries blocked, all library queries allowed |
+| `test_run_models.py` | 5 | Newey-West bandwidth, breakpoint recovered from a synthetic series, lag alignment |
+| `test_sql_guard.py` | 57 | 40 attack queries blocked, harmless edge cases and all library queries allowed |
 | `test_reader_role.py` | 10 | Database-level protection without the validator |
+| `test_errors.py` | 9 | Real PostgreSQL errors mapped to plain explanations, 3 s timeout, row limit |
 | `test_queries.py` | 56 | Static checks on the app's SQL (placeholders) |
+| `test_helpers.py` | 14 | SQL literal quoting, library numbering, psql command (password never on the command line) |
 | `test_challenges.py` | 15 | Challenge references and the answer checker |
+| `test_i18n.py` | 175 | Every text in EN and TR, matching placeholders, every key used in the code exists |
 | `test_app.py` | 16 | Every page renders in both languages; Playground runs and blocks queries |
+
+**421 test cases from 95 test functions** — many are parametrised (for example one case per
+translation key or per attack query).
 
 GitHub Actions runs two jobs on every push: **lint** (ruff, sqlfluff) and **test**, which builds
 the database on PostGIS, runs the whole pipeline under coverage (with a grid subset), then all

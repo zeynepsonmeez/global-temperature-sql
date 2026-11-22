@@ -16,6 +16,11 @@ ALLOWED = [
     "SELECT * FROM v_monthly WHERE region = 'GLB' AND anomaly > 1.0;",   # trailing ; is fine
     "-- a comment\nSELECT 1",
     "SELECT 'DROP TABLE x' AS harmless_text",                            # keyword inside a string
+    "SELECT ';' AS semicolon_in_text",                                    # ; inside a string
+    "select 1 /* ; drop table regions */",                               # ; inside a comment
+    "SELECT 1 -- ; DROP TABLE regions",
+    "SELECT * FROM v_monthly WHERE region = $$GLB$$",                    # dollar-quoted string
+    "WITH x AS (SELECT 1) SELECT * FROM x UNION SELECT 2",
 ]
 
 BLOCKED = [
@@ -41,6 +46,22 @@ BLOCKED = [
     ("COPY regions TO STDOUT", "read-only"),
     ("GRANT ALL ON regions TO public", "read-only"),
     ("BEGIN", "read-only"),
+    ("drop table regions", "read-only"),                                  # lower case
+    ("SELECT * FROM v_monthly FOR UPDATE", "not allowed"),               # row locks
+    ("DO $$ BEGIN DELETE FROM regions; END $$", "read-only"),           # anonymous code block
+    ("EXPLAIN ANALYZE DELETE FROM regions", "read-only"),               # EXPLAIN ANALYZE executes
+    ("REFRESH MATERIALIZED VIEW mv_grid_annual", "read-only"),
+    ("CALL some_procedure()", "read-only"),
+    ("VACUUM regions", "read-only"),
+    ("LISTEN channel", "read-only"),
+    ("PREPARE p AS SELECT 1", "read-only"),
+    ("COPY (SELECT 1) TO '/tmp/x'", "read-only"),
+    ("INSERT INTO x SELECT 1", "read-only"),
+    ("SELECT lo_import('/etc/passwd')", "lo_import"),
+    ("SELECT dblink('host=x', 'select 1')", "dblink"),
+    ("SELECT current_setting('statement_timeout')", "current_setting"),
+    ("SELECT pg_terminate_backend(1)", "pg_terminate_backend"),
+    ("SELECT nextval('s')", "nextval"),
     ("SELECT FROM WHERE", "parsed"),
     ("SELECT " + "1," * 3000 + "1", "too long"),
 ]
