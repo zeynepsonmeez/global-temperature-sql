@@ -137,10 +137,18 @@ ORDER  BY l.anomaly DESC;
 
 -- S9. How observation coverage grew: share of the Earth's surface with data, per decade
 -- Area-weighted, so a polar cell counts for much less than an equatorial one.
-SELECT (a.year / 10) * 10                                    AS decade,
-       ROUND((100 * SUM(g.area_weight) / COUNT(DISTINCT a.year))::numeric, 1) AS pct_of_earth_with_data
-FROM   v_grid_annual a
-JOIN   grid_cells    g USING (cell_id)
+-- Two steps (each year's covered share, then the decade mean) instead of one
+-- COUNT(DISTINCT year) over 2.4M rows: same result, but no large sort that would exceed
+-- the Playground role's temporary-file limit.
+WITH yearly AS (
+    SELECT a.year, SUM(g.area_weight) AS share
+    FROM   v_grid_annual a
+    JOIN   grid_cells    g USING (cell_id)
+    GROUP  BY a.year
+)
+SELECT (year / 10) * 10                          AS decade,
+       ROUND((100 * AVG(share))::numeric, 1)     AS pct_of_earth_with_data
+FROM   yearly
 GROUP  BY decade
 ORDER  BY decade;
 

@@ -255,10 +255,22 @@ TEXT: dict[str, dict[str, str]] = {
                                   "Start with v_monthly (region, year, month, anomaly). Every table is listed under Schema.",
                             "tr": "SQL sorgunuzu buraya yazın ya da soldan bir örnek sorgu yükleyin…\n\n"
                                   "v_monthly ile başlayın (region, year, month, anomaly). Tüm tablolar Şema altında."},
-    "pg.badges":           {"en": "🔒 Read-only · ⏱ 3 s timeout · max {rows:,} rows",
-                            "tr": "🔒 Salt okunur · ⏱ 3 sn zaman aşımı · en fazla {rows:,} satır"},
+    "pg.badges":           {"en": "🔒 Read-only · 🧮 cost checked before running · ⏱ 3 s timeout · max {rows:,} rows",
+                            "tr": "🔒 Salt okunur · 🧮 çalıştırmadan önce maliyet kontrolü · ⏱ 3 sn zaman aşımı · "
+                                  "en fazla {rows:,} satır"},
     "pg.run":              {"en": "Run query", "tr": "Çalıştır"},
-    "pg.ok":               {"en": "{rows:,} rows · {ms:,.0f} ms", "tr": "{rows:,} satır · {ms:,.0f} ms"},
+    "pg.ok":               {"en": "{rows:,} rows · {ms:,.0f} ms · estimated cost {cost:,.0f}",
+                            "tr": "{rows:,} satır · {ms:,.0f} ms · tahmini maliyet {cost:,.0f}"},
+    "pg.cost.blocked":     {"en": "This query looks too expensive to run",
+                            "tr": "Bu sorgu çalıştırmak için fazla maliyetli görünüyor"},
+    "pg.cost.detail":      {"en": "PostgreSQL's planner estimates a cost of {cost:,.0f} (limit {limit:,.0f}); the "
+                                  "most expensive step is a {node}. Nothing was executed. Usually a join is missing "
+                                  "its ON condition, or a query scans the 25-million-row v_grid where v_grid_annual "
+                                  "or a WHERE on obs_date would do.",
+                            "tr": "PostgreSQL'in planlayıcısı {cost:,.0f} maliyet tahmin ediyor (sınır {limit:,.0f}); "
+                                  "en pahalı adım: {node}. Hiçbir şey çalıştırılmadı. Genellikle bir JOIN'in ON koşulu "
+                                  "eksiktir ya da v_grid_annual veya obs_date üzerinde bir WHERE yeterliyken 25 milyon "
+                                  "satırlık v_grid taranıyordur."},
     "pg.truncated":        {"en": "Showing the first {rows:,} rows only.", "tr": "Yalnızca ilk {rows:,} satır gösteriliyor."},
     "pg.empty_result":     {"en": "The query ran but returned no rows.", "tr": "Sorgu çalıştı ama satır döndürmedi."},
     "pg.blocked":          {"en": "This query was not run", "tr": "Bu sorgu çalıştırılmadı"},

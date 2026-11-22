@@ -18,6 +18,10 @@ ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 
 MAX_ROWS = 1_000
+# Planner cost above which a Playground query is refused before it runs. Calibrated by
+# measuring every query in sql/: the most expensive one costs ~0.3M, a cross join of the
+# grid ~8.6 trillion. See docs/SECURITY.md.
+MAX_PLAN_COST = 2_000_000
 
 
 def reader_settings() -> dict[str, str]:
@@ -74,16 +78,52 @@ class QueryResult:
     error: psycopg.Error | None = None
 
 
+@dataclass
+class CostEstimate:
+    total_cost: float = 0.0          # planner cost units of the whole query
+    plan_rows: int = 0               # rows the planner expects to return
+    top_node: str = ""               # e.g. "Nested Loop", "Seq Scan"
+    error: psycopg.Error | None = None
+
+    @property
+    def too_expensive(self) -> bool:
+        return self.error is None and self.total_cost > MAX_PLAN_COST
+
+
+def _statement(sql: str) -> str:
+    """The query text without trailing semicolons, so it can be embedded in EXPLAIN / DECLARE."""
+    return sql.strip().rstrip(";").strip()
+
+
+def estimate_cost(sql: str) -> CostEstimate:
+    """Ask the planner what a query would cost — EXPLAIN plans it without running it.
+
+    The third layer of the Playground's defence: a cross join of two 25M-row tables is
+    stopped here before it uses any CPU, instead of after 3 seconds by the timeout.
+    """
+    try:
+        with connect() as conn, conn.cursor() as cur:
+            cur.execute("EXPLAIN (FORMAT JSON) " + _statement(sql))
+            plan = cur.fetchone()[0][0]["Plan"]
+    except psycopg.Error as error:
+        return CostEstimate(error=error)
+    return CostEstimate(total_cost=float(plan["Total Cost"]), plan_rows=int(plan["Plan Rows"]),
+                        top_node=plan["Node Type"])
+
+
 def run_user_query(sql: str, max_rows: int = MAX_ROWS) -> QueryResult:
     """Run a Playground query (already checked by sql_guard) with a row limit.
 
     The limit is applied with fetchmany(), not by editing the user's SQL: rewriting the
-    text could change its meaning, while fetchmany simply stops reading after max_rows.
+    text could change its meaning. The cursor is a SERVER-SIDE (named) cursor: PostgreSQL
+    sends only the rows that are fetched. A normal client-side cursor would transfer the
+    whole result first — all 25 million rows of "SELECT * FROM v_grid" — and only then let
+    fetchmany() discard them.
     """
     started = time.perf_counter()
     try:
-        with connect() as conn, conn.cursor() as cur:
-            cur.execute(sql)
+        with connect() as conn, conn.cursor(name="playground") as cur:
+            cur.execute(_statement(sql))
             columns = [column.name for column in cur.description] if cur.description else []
             rows = cur.fetchmany(max_rows + 1) if columns else []
     except psycopg.Error as error:

@@ -75,6 +75,14 @@ def test_playground_blocks_a_write():
     assert "read-only" in at.error[0].value.lower()
 
 
+def test_playground_cost_gate_blocks_before_running():
+    at = open_page("views/playground.py")
+    at.text_area[0].set_value("SELECT count(*) FROM v_grid a CROSS JOIN v_grid b")
+    at.button[0].click().run()
+    assert at.error, "expected the cost gate to block the query"
+    assert "expensive" in at.error[0].value.lower() and "nothing was executed" in at.error[0].value.lower()
+
+
 def test_playground_explains_a_database_error():
     at = open_page("views/playground.py")
     at.text_area[0].set_value("SELECT * FROM monthly_anomalies")   # base table: not visible to readers

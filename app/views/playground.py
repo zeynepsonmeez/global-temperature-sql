@@ -6,7 +6,7 @@ import streamlit as st
 import queries as q
 from challenges import CHALLENGES, compare
 from components import HEAT, footer, style_figure
-from database import MAX_ROWS, friendly_error_key, read_df, run_user_query
+from database import MAX_PLAN_COST, MAX_ROWS, estimate_cost, friendly_error_key, read_df, run_user_query
 from i18n import lang, t
 from library import load_samples
 from sql_guard import check_query
@@ -67,14 +67,26 @@ with center:
     run = st.button(t("pg.run"), type="primary", icon=":material/play_arrow:")
 
     if run:
+        # Three gates, cheapest first: the syntax check, the planner's cost estimate
+        # (EXPLAIN — nothing is executed), then the real run under the role's limits.
+        st.session_state["pg_result"] = None
+        st.session_state["pg_cost"] = None
         verdict = check_query(sql)
+        estimate = estimate_cost(sql) if verdict.ok else None
         if not verdict.ok:
-            st.session_state["pg_result"] = None
             st.session_state["pg_error"] = (t("pg.blocked"), verdict.message)
+        elif estimate.error is not None:
+            detail = estimate.error.diag.message_primary or str(estimate.error)
+            st.session_state["pg_error"] = (t(friendly_error_key(estimate.error)), detail)
+        elif estimate.too_expensive:
+            st.session_state["pg_error"] = (
+                t("pg.cost.blocked"),
+                t("pg.cost.detail", cost=estimate.total_cost, limit=MAX_PLAN_COST, node=estimate.top_node),
+            )
         else:
             result = run_user_query(sql)
+            st.session_state["pg_cost"] = estimate.total_cost
             if result.error is not None:
-                st.session_state["pg_result"] = None
                 detail = result.error.diag.message_primary or str(result.error)
                 st.session_state["pg_error"] = (t(friendly_error_key(result.error)), detail)
             else:
@@ -88,7 +100,8 @@ with center:
         st.error(f"**{title}**\n\n{detail}", icon=":material/block:")
     elif result is not None:
         frame = result.frame
-        st.success(t("pg.ok", rows=len(frame), ms=result.elapsed_ms), icon=":material/check_circle:")
+        st.success(t("pg.ok", rows=len(frame), ms=result.elapsed_ms, cost=st.session_state.get("pg_cost") or 0),
+                   icon=":material/check_circle:")
         if result.truncated:
             st.warning(t("pg.truncated", rows=MAX_ROWS))
         if frame.empty:

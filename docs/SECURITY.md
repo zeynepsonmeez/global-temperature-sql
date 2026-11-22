@@ -31,7 +31,28 @@ The app connects as `gts_reader`, never as the owner:
   `work_mem = 8MB`, `temp_file_limit = 32MB`, `CONNECTION LIMIT 20`.
 - **Read-only transactions:** the role defaults to read-only and the app opens every
   transaction as `READ ONLY`.
-- **Row limit:** results are read with `fetchmany(1000 + 1)`; the user's SQL is never rewritten.
+- **Row limit:** results are read through a **server-side cursor** with `fetchmany(1000 + 1)`, so
+  PostgreSQL sends only those rows; the user's SQL is never rewritten. (A client-side cursor
+  would first transfer the entire result — all 25 million rows of `SELECT * FROM v_grid`.)
+
+## Between the layers — the EXPLAIN cost gate (`app/database.py`)
+
+After the validator accepts a query and before it runs, the app asks the planner for its cost
+with `EXPLAIN (FORMAT JSON)`, which plans the query **without executing it**. Queries whose
+estimated cost exceeds `MAX_PLAN_COST` (2,000,000) are refused with an explanation of what is
+expensive and how to fix it.
+
+The limit was calibrated by measuring every query in `sql/` (the most expensive costs about
+0.3 M) against deliberately expensive ones: a triple self-join of `v_monthly` costs ~2 billion,
+an unconditioned join of the grid with itself ~8.6 trillion. The timeout would stop those
+queries after 3 seconds anyway; the gate stops them before they use any CPU, and tells the
+visitor why.
+
+Calibrating the gate also surfaced two real problems, both fixed:
+an index was missing on `cell_countries (cell_id)` (query S6 cost 3.4 M, now under 0.1 M), and
+query S9 exceeded the reader's temporary-file limit and failed in the Playground (rewritten to
+avoid a large sort). `tests/test_errors.py` now runs every library query as the read-only role
+through the gate, exactly as a visitor would.
 - **Network:** the database port is bound to `127.0.0.1` only (`docker-compose.yml`).
 
 ### Lesson learned while testing

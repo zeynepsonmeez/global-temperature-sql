@@ -103,6 +103,10 @@ CREATE TABLE cell_countries (
     overlap_km2  REAL     NOT NULL CHECK (overlap_km2 > 0),   -- area of cell ∩ country
     PRIMARY KEY (country_id, cell_id)
 );
+-- The primary key starts with country_id; "which countries does this cell touch?" needs
+-- cell_id first. Without it a per-cell lookup scanned the whole table (found by the
+-- Playground's cost gate: query S6 dropped from ~3.4M to a fraction of that).
+CREATE INDEX cell_countries_cell ON cell_countries (cell_id);
 
 -- ---------------------------------------------------------------------------
 -- Views and materialized views
