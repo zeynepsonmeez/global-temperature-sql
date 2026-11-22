@@ -17,6 +17,19 @@ interactive maps and charts, and a secure SQL Playground.
 ![SQLFluff](https://img.shields.io/badge/SQL-sqlfluff-c22e2e)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+![Home page: a slowly turning globe coloured by the warming of each latitude band](docs/images/home.png)
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/explorer.png" alt="Climate Explorer: the global trend since 1880 with a 5-year moving average"><br><sub><b>Climate Explorer</b> — seven analyses, each with its SQL</sub></td>
+    <td width="50%"><img src="docs/images/map.png" alt="Warming Map: warming rate by country, 1970–2025"><br><sub><b>Warming Map</b> — country trends from 25 M grid values in PostGIS</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/drivers.png" alt="Climate Drivers: the ENSO index above global temperature"><br><sub><b>Climate Drivers</b> — ENSO, CO₂ and a regression model</sub></td>
+    <td width="50%"><img src="docs/images/playground.png" alt="SQL Playground: sample queries, schema, editor and challenges"><br><sub><b>SQL Playground</b> — read-only SQL with a cost gate and 15 challenges</sub></td>
+  </tr>
+</table>
+
 ---
 
 ## Features
