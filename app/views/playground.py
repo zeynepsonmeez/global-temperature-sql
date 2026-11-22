@@ -44,7 +44,7 @@ with left:
             t("pg.samples.pick"), list(sample_by_label), index=None, key="pg_sample",
             on_change=load_sample, placeholder=f"{len(samples)} …", label_visibility="collapsed",
         )
-        for level in ("Basic", "Intermediate", "Advanced"):
+        for level in ("Basic", "Intermediate", "Advanced", "Spatial"):
             count = sum(1 for s in samples if s.level == level)
             st.caption(f"{level}: {count}")
 

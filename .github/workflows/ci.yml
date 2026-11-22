@@ -22,7 +22,7 @@ jobs:
 
     services:
       db:
-        image: postgres:17
+        image: postgis/postgis:17-3.6
         env:
           POSTGRES_DB: global_temperature
           POSTGRES_USER: gts_admin
@@ -54,6 +54,18 @@ jobs:
         run: |
           python scripts/clean_data.py
           python scripts/load_data.py
+
+      - name: Cache grid downloads
+        uses: actions/cache@v4
+        with:
+          path: data/raw/grid
+          key: grid-${{ hashFiles('data/raw/grid/manifest.json') }}
+
+      # The full grid is ~25M rows; CI loads 2015 onwards to exercise the same code quickly.
+      - name: Download and load the spatial grid (subset)
+        run: |
+          [ -f data/raw/grid/ne_50m_admin_0_countries.geojson ] || python scripts/download_grid.py
+          python scripts/load_grid.py --start-year 2015
 
       - name: Run tests
         run: pytest -v

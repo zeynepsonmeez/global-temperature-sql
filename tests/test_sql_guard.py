@@ -59,9 +59,9 @@ def test_blocked_queries(sql, expected):
     assert expected.lower() in result.message.lower()
 
 
-@pytest.mark.parametrize("name", ["basic", "intermediate", "advanced"])
+@pytest.mark.parametrize("name", ["basic", "intermediate", "advanced", "spatial"])
 def test_every_library_query_passes_the_guard(name):
-    """All 37 sample queries must be runnable in the Playground."""
+    """Every sample query in sql/ must be runnable in the Playground."""
     text = (ROOT / "sql" / f"{name}_queries.sql").read_text(encoding="utf-8")
     import sqlglot
     for statement in sqlglot.parse(text, read="postgres"):

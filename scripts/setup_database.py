@@ -4,8 +4,9 @@ Usage:
     python scripts/setup_database.py            # psql inside the Docker container (default)
     PSQL_MODE=local python scripts/setup_database.py   # a local psql client (used in CI)
 
-Runs database/schema.sql, then database/roles.sql with the reader password from .env.
-schema.sql drops existing tables, so run scripts/load_data.py afterwards.
+Runs database/schema.sql, database/spatial_schema.sql, then database/roles.sql with the
+reader password from .env.
+Both schema files drop existing tables, so run load_data.py and load_grid.py afterwards.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ import sys
 from db import ROOT, connection_settings
 
 SCHEMA = ROOT / "database" / "schema.sql"
+SPATIAL = ROOT / "database" / "spatial_schema.sql"
 ROLES = ROOT / "database" / "roles.sql"
 
 
@@ -50,6 +52,7 @@ def main() -> int:
     if not reader_password:
         sys.exit("POSTGRES_READER_PASSWORD is not set (see .env.example)")
     run_file(SCHEMA)
+    run_file(SPATIAL)
     run_file(ROLES, ["-v", f"reader_password={reader_password}"])
     return 0
 

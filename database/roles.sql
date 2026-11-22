@@ -22,7 +22,7 @@ ALTER ROLE gts_reader SET statement_timeout = '3s';
 ALTER ROLE gts_reader SET idle_in_transaction_session_timeout = '10s';
 ALTER ROLE gts_reader SET work_mem = '8MB';
 ALTER ROLE gts_reader SET temp_file_limit = '32MB';
-ALTER ROLE gts_reader SET search_path = playground;
+ALTER ROLE gts_reader SET search_path = playground, postgis;
 
 BEGIN;
 
@@ -43,13 +43,31 @@ CREATE VIEW playground.datasets  AS
            downloaded_at, source_last_modified
     FROM   public.datasets;
 
+-- Spatial data (database/spatial_schema.sql). Geometry columns are included so the
+-- Playground can be used to practise PostGIS functions such as ST_Area or ST_Intersects.
+CREATE VIEW playground.grid_cells AS
+    SELECT cell_id, lat, lon, area_weight, geom FROM public.grid_cells;
+CREATE VIEW playground.v_grid AS
+    SELECT cell_id, obs_date, anomaly FROM public.v_grid;
+CREATE VIEW playground.countries AS
+    SELECT country_id, adm0_a3, iso_a3, name, continent, geom FROM public.countries;
+CREATE VIEW playground.cell_countries AS
+    SELECT cell_id, country_id, overlap_km2 FROM public.cell_countries;
+CREATE VIEW playground.v_grid_annual    AS SELECT * FROM public.v_grid_annual;
+CREATE VIEW playground.v_grid_trends    AS SELECT * FROM public.v_grid_trends;
+CREATE VIEW playground.v_country_annual AS SELECT * FROM public.v_country_annual;
+
 COMMENT ON SCHEMA playground IS 'Read-only views for the web app and SQL Playground.';
+COMMENT ON VIEW playground.v_grid IS 'Monthly anomalies of every 2x2 degree cell (~25 million rows).';
+COMMENT ON VIEW playground.v_country_annual IS 'Area-weighted annual anomaly per country.';
 COMMENT ON VIEW playground.v_monthly IS 'Monthly anomalies (GLB, NH, SH), latest snapshot.';
 COMMENT ON VIEW playground.v_annual  IS 'Annual anomalies of latitude bands, latest snapshot.';
 
 -- Views run with their owner's rights, so the reader needs no access to the base tables.
 GRANT USAGE  ON SCHEMA playground TO gts_reader;
 GRANT SELECT ON ALL TABLES IN SCHEMA playground TO gts_reader;
+-- PostGIS types and functions only (no tables live in the postgis schema).
+GRANT USAGE  ON SCHEMA postgis TO gts_reader;
 
 -- 4. No temporary tables (CREATE TEMP would otherwise be allowed to everyone)
 REVOKE TEMPORARY ON DATABASE global_temperature FROM PUBLIC;

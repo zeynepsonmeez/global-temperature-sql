@@ -22,3 +22,7 @@ data/processed/*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Large downloads (re-created by scripts/download_grid.py); the manifest is committed
+data/raw/grid/*
+!data/raw/grid/manifest.json

@@ -23,8 +23,10 @@ The validator also turns the reason into a plain-language message.
 
 The app connects as `gts_reader`, never as the owner:
 
-- **Privileges:** `USAGE` on the `playground` schema and `SELECT` on its four views only.
-  No access to the `public` schema or its base tables, no `CREATE` anywhere, no `TEMPORARY`.
+- **Privileges:** `USAGE` on the `playground` schema and `SELECT` on its views only, plus
+  `USAGE` on the `postgis` schema so spatial functions work. PostGIS is installed in its own
+  schema precisely so that this grant does not open the `public` schema. No access to base
+  tables, no `CREATE` anywhere, no `TEMPORARY`.
 - **Session limits:** `statement_timeout = 3s`, `idle_in_transaction_session_timeout = 10s`,
   `work_mem = 8MB`, `temp_file_limit = 32MB`, `CONNECTION LIMIT 20`.
 - **Read-only transactions:** the role defaults to read-only and the app opens every
