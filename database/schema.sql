@@ -75,9 +75,11 @@ CREATE TABLE zonal_annual_anomalies (
 -- ---------------------------------------------------------------------------
 -- Convenience views: always the most recent snapshot, with region codes
 -- ---------------------------------------------------------------------------
+-- Filtered by name: other snapshots (e.g. the spatial grid) are also recorded in datasets.
 CREATE VIEW v_latest_dataset AS
 SELECT dataset_id
 FROM   datasets
+WHERE  name = 'GISTEMP v4'
 ORDER  BY downloaded_at DESC
 LIMIT  1;
 

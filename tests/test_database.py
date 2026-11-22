@@ -76,7 +76,9 @@ def test_obs_date_is_generated(cur):
 
 def test_latest_view_points_to_newest_snapshot(cur):
     latest = scalar(cur, "SELECT dataset_id FROM v_latest_dataset")
-    newest = scalar(cur, "SELECT dataset_id FROM datasets ORDER BY downloaded_at DESC LIMIT 1")
+    # Other snapshots (the spatial grid) are also in datasets: the view must ignore them.
+    newest = scalar(cur, "SELECT dataset_id FROM datasets WHERE name = 'GISTEMP v4' "
+                         "ORDER BY downloaded_at DESC LIMIT 1")
     assert latest == newest
 
 
@@ -125,7 +127,7 @@ def test_anomaly_column_accepts_null(cur):
     assert scalar(cur, "SELECT anomaly FROM monthly_anomalies WHERE year = 2999") is None
 
 
-@pytest.mark.parametrize("name", ["basic", "intermediate", "advanced"])
+@pytest.mark.parametrize("name", ["basic", "intermediate", "advanced", "spatial"])
 def test_sql_library_runs(cur, name):
     """Every query in sql/*.sql must keep running as the schema evolves."""
     sql = (cd.ROOT / "sql" / f"{name}_queries.sql").read_text(encoding="utf-8")

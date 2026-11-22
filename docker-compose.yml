@@ -4,9 +4,22 @@ name: global-temperature-sql
 
 services:
   db:
-    image: postgres:17
+    # PostgreSQL 17 + PostGIS 3.6 on Debian 13 — the same OS base as the earlier postgres:17
+    # image, so the existing data directory (and its text collation) stays valid.
+    image: postgis/postgis:17-3.6
     container_name: gts-postgres
     restart: unless-stopped
+    # Parallel queries on the ~28M-row grid table use shared memory; Docker's default 64 MB is too small.
+    shm_size: 512mb
+    # Sized for a laptop: larger buffers for the grid table, faster index builds and bulk loads.
+    command: >
+      postgres
+      -c shared_buffers=512MB
+      -c effective_cache_size=2GB
+      -c maintenance_work_mem=512MB
+      -c work_mem=32MB
+      -c max_wal_size=4GB
+      -c random_page_cost=1.1
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
