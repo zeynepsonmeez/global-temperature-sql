@@ -147,6 +147,83 @@ TEXT: dict[str, dict[str, str]] = {
                                   "değil, çevre bölgenin yumuşatılmış hâlidir."},
     "map.global":          {"en": "Global mean", "tr": "Küresel ortalama"},
 
+    # --- climate drivers (ENSO, CO2, models) ------------------------------------------------
+    "nav.drivers":         {"en": "Climate Drivers", "tr": "İklim Etkenleri"},
+    "drv.intro":           {"en": "Why does global temperature go up and down from year to year, and how fast is the "
+                                  "underlying trend? El Niño / La Niña (ENSO), CO₂ and a regression model.",
+                            "tr": "Küresel sıcaklık yıldan yıla neden iniş çıkış yapıyor ve alttaki eğilim ne kadar "
+                                  "hızlı? El Niño / La Niña (ENSO), CO₂ ve bir regresyon modeli."},
+    "drv.caution":         {"en": "These are statistical associations in observed data. They describe how the series "
+                                  "move together; on their own they do not prove cause. Methods and limitations: "
+                                  "docs/METHODS.md.",
+                            "tr": "Bunlar gözlem verisindeki istatistiksel ilişkilerdir; serilerin birlikte nasıl "
+                                  "hareket ettiğini gösterir, tek başlarına neden-sonuç kanıtlamaz. Yöntemler ve "
+                                  "sınırlılıklar: docs/METHODS.md."},
+    "drv.tab.enso":        {"en": "El Niño & La Niña", "tr": "El Niño ve La Niña"},
+    "drv.tab.records":     {"en": "Records without ENSO", "tr": "ENSO'suz rekorlar"},
+    "drv.tab.trend":       {"en": "Trend & breakpoint", "tr": "Eğilim ve kırılma"},
+    "drv.tab.co2":         {"en": "CO₂", "tr": "CO₂"},
+    "drv.enso.title":      {"en": "ENSO index and global temperature", "tr": "ENSO indeksi ve küresel sıcaklık"},
+    "drv.enso.note":       {"en": "ONI ≥ +0.5 = El Niño (red), ≤ −0.5 = La Niña (blue). Warm spikes in global "
+                                  "temperature tend to follow El Niño peaks by a few months.",
+                            "tr": "ONI ≥ +0,5 = El Niño (kırmızı), ≤ −0,5 = La Niña (mavi). Küresel sıcaklıktaki "
+                                  "sıçramalar El Niño zirvelerini birkaç ay gecikmeyle izleme eğiliminde."},
+    "drv.oni":             {"en": "ONI (ENSO index)", "tr": "ONI (ENSO indeksi)"},
+    "drv.phase.title":     {"en": "Departure from the trend by winter ENSO phase", "tr": "Kış ENSO durumuna göre eğilimden sapma"},
+    "drv.phase.note":      {"en": "The long-term trend is removed first; otherwise El Niño years would look warm "
+                                  "only because recent years are warm.",
+                            "tr": "Önce uzun dönem eğilim çıkarılır; aksi hâlde El Niño yılları sadece son yıllar "
+                                  "sıcak olduğu için sıcak görünürdü."},
+    "drv.lag.title":       {"en": "How many months later does ENSO show up?", "tr": "ENSO kaç ay sonra etkisini gösteriyor?"},
+    "drv.lag.axis":        {"en": "ONI leads temperature by (months)", "tr": "ONI'nin sıcaklıktan önceliği (ay)"},
+    "drv.lag.note":        {"en": "Correlation between the detrended global anomaly and the ONI k months earlier. "
+                                  "The model chooses its lag separately, with AIC.",
+                            "tr": "Eğilimi çıkarılmış küresel anomali ile k ay önceki ONI arasındaki korelasyon. "
+                                  "Model kendi gecikmesini ayrıca AIC ile seçer."},
+    "drv.kpi.lag":         {"en": "ENSO lag (AIC)", "tr": "ENSO gecikmesi (AIC)"},
+    "drv.kpi.coef":        {"en": "ENSO effect", "tr": "ENSO etkisi"},
+    "drv.kpi.coef.unit":   {"en": "°C per ONI unit", "tr": "°C / ONI birimi"},
+    "drv.kpi.trend":       {"en": "Trend after removing ENSO", "tr": "ENSO çıkarıldıktan sonra eğilim"},
+    "drv.kpi.r2":          {"en": "Variance explained", "tr": "Açıklanan varyans"},
+    "drv.months":          {"en": "months", "tr": "ay"},
+    "drv.records.title":   {"en": "Observed vs ENSO-adjusted global temperature", "tr": "Gözlenen ve ENSO'dan arındırılmış küresel sıcaklık"},
+    "drv.observed":        {"en": "Observed", "tr": "Gözlenen"},
+    "drv.adjusted":        {"en": "ENSO removed", "tr": "ENSO çıkarılmış"},
+    "drv.records.rank":    {"en": "The 10 warmest years, before and after removing ENSO", "tr": "En sıcak 10 yıl, ENSO çıkarılmadan önce ve sonra"},
+    "drv.records.note":    {"en": "adjusted = observed − (ENSO coefficient × ONI three months earlier). A year that "
+                                  "drops in rank owed part of its warmth to El Niño.",
+                            "tr": "arındırılmış = gözlenen − (ENSO katsayısı × 3 ay önceki ONI). Sıralamada düşen bir "
+                                  "yıl, sıcaklığının bir kısmını El Niño'ya borçludur."},
+    "drv.trend.title":     {"en": "When did warming speed up?", "tr": "Isınma ne zaman hızlandı?"},
+    "drv.trend.fit":       {"en": "Two-segment trend", "tr": "İki parçalı eğilim"},
+    "drv.trend.break":     {"en": "Breakpoint {year} (approx. 95% range {low}–{high}): "
+                                  "{before:+.3f} → {after:+.3f} °C / decade",
+                            "tr": "Kırılma {year} (yaklaşık %95 aralığı {low}–{high}): "
+                                  "{before:+.3f} → {after:+.3f} °C / 10 yıl"},
+    "drv.profile.title":   {"en": "Fit error for every candidate breakpoint", "tr": "Her aday kırılma yılı için uyum hatası"},
+    "drv.profile.axis":    {"en": "Residual sum of squares", "tr": "Artık kareler toplamı"},
+    "drv.ci.title":        {"en": "Why the confidence interval matters", "tr": "Güven aralığı neden önemli?"},
+    "drv.ci.note":         {"en": "Consecutive months are not independent (residual autocorrelation {ac:.2f}). The "
+                                  "classical interval ignores that and is too narrow; Newey-West corrects it.",
+                            "tr": "Ardışık aylar birbirinden bağımsız değil (artık otokorelasyonu {ac:.2f}). Klasik "
+                                  "aralık bunu yok sayar ve fazla dardır; Newey-West bunu düzeltir."},
+    "drv.ci.col.series":   {"en": "Series", "tr": "Seri"},
+    "drv.ci.col.method":   {"en": "Interval", "tr": "Aralık"},
+    "drv.ci.col.trend":    {"en": "Trend (°C / decade)", "tr": "Eğilim (°C / 10 yıl)"},
+    "drv.ci.col.ci":       {"en": "95% interval", "tr": "%95 aralık"},
+    "drv.ci.col.width":    {"en": "± width", "tr": "± genişlik"},
+    "drv.ci.monthly":      {"en": "Monthly, with ENSO", "tr": "Aylık, ENSO ile"},
+    "drv.ci.annual":       {"en": "Annual means", "tr": "Yıllık ortalamalar"},
+    "drv.ci.classical":    {"en": "Classical", "tr": "Klasik"},
+    "drv.co2.title":       {"en": "The Keeling curve: CO₂ at Mauna Loa", "tr": "Keeling eğrisi: Mauna Loa'da CO₂"},
+    "drv.co2.monthly":     {"en": "Monthly mean", "tr": "Aylık ortalama"},
+    "drv.co2.trend":       {"en": "Seasonally adjusted", "tr": "Mevsimsellikten arındırılmış"},
+    "drv.scatter.title":   {"en": "Annual global temperature against CO₂", "tr": "Yıllık küresel sıcaklık ve CO₂"},
+    "drv.scatter.note":    {"en": "{slope:.2f} °C per 100 ppm, R² = {r2:.2f} ({first}–{last}). Two rising series "
+                                  "correlate; the physics of greenhouse gases, not this line, is the evidence of cause.",
+                            "tr": "100 ppm başına {slope:.2f} °C, R² = {r2:.2f} ({first}–{last}). Birlikte yükselen iki "
+                                  "seri ilişkili çıkar; nedenin kanıtı bu doğru değil, sera gazlarının fiziğidir."},
+
     # --- playground ---------------------------------------------------------------
     "pg.schema":           {"en": "Schema · playground", "tr": "Şema · playground"},
     "pg.samples":          {"en": "Sample queries", "tr": "Örnek sorgular"},

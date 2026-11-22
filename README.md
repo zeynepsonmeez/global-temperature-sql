@@ -4,7 +4,8 @@
 
 An interactive SQL-powered platform for exploring historical global temperature anomalies from
 NASA GISTEMP v4 — a PostgreSQL/PostGIS database with **25 million gridded observations**, a
-library of 47 SQL analyses, a measured indexing and partitioning study, a Streamlit app with
+library of 56 SQL analyses, a measured indexing and partitioning study, a regression analysis of
+El Niño and the warming trend with autocorrelation-robust uncertainty, a Streamlit app with
 interactive maps and charts, and a secure SQL Playground.
 
 ![CI](https://github.com/OWNER/global-temperature-sql/actions/workflows/ci.yml/badge.svg)
@@ -27,8 +28,13 @@ rates for any period, the full grid for any year since 1880, and a side-by-side 
 up to five countries against the global mean. Country series are area-weighted from the grid cells inside
 each border.
 
+**Climate Drivers** — why does temperature go up and down from year to year? ENSO (El Niño /
+La Niña) against global temperature, the lag between them, the warmest years before and after
+removing ENSO, the breakpoint when warming accelerated, the Keeling CO₂ curve, and classical vs
+Newey-West confidence intervals side by side. Methods: [`docs/METHODS.md`](docs/METHODS.md).
+
 **SQL Playground** — write and run read-only SQL against the real database (including PostGIS
-functions): schema browser, 47 sample queries (basic → advanced → spatial), result table with
+functions): schema browser, 56 sample queries (basic → advanced → spatial → drivers), result table with
 timing, CSV export, quick charts and five **challenges** checked automatically against a
 reference query.
 
@@ -52,6 +58,10 @@ Computed by the queries in [`sql/`](sql/) on the NASA snapshot of 10 Nov 2026
 | **Türkiye** has warmed **+0.44 °C per decade** since 1970 — 2.2× the global rate; 2024 was +2.57 °C. | S2, map |
 | The hemisphere gap grew from 0.06 °C (1990s) to **0.61 °C** (2020s): the land-rich North warms faster. | I2 |
 | Relative to 1880–1900, 2024 reached about +1.50 °C (a single year, not the Paris 20-year average). | I9 |
+| El Niño is associated with **+0.09 °C per ONI unit**, three months later; adding ENSO raises R² from 0.83 to 0.87. | model |
+| With ENSO removed, **2016 drops from the 4th to the 9th** warmest year; 2023–2025 stay on top. | D8 |
+| Warming **accelerated around 1975** (approx. range 1971–1979): from 0.04 to **0.21 °C per decade**. | D9 |
+| Autocorrelation makes the classical trend interval **half as wide as it should be** (Newey-West). | model |
 
 ## Performance study
 
@@ -71,6 +81,14 @@ prunes date queries to one partition; pre-aggregation beats any index. The produ
 decade partitions + `(cell_id, obs_date)` primary key + BRIN + materialized views — is the only
 one fast on every query shape.
 
+## Statistical analysis
+
+A regression of the monthly global anomaly on time and the lagged El Niño index (1970 onwards),
+estimated with Newey-West standard errors because consecutive months are not independent
+(residual autocorrelation 0.59), plus a two-segment breakpoint search on annual means.
+Assumptions, every number and its limitations are written up in [`docs/METHODS.md`](docs/METHODS.md);
+the results are described as associations, not attributions.
+
 ## Architecture
 
 ```text
@@ -82,10 +100,11 @@ one fast on every query shape.
    (COPY 25M rows, constraints after load, spatial join)      grid_anomalies (partitioned by decade)
                                                               grid_cells, countries, cell_countries
                                                               materialized views (cell, country, trends)
-                                                            playground: read-only views
+ NOAA ONI + CO2 ─► load_drivers.py ─► run_models.py ───────►  enso_oni, co2_monthly, model_* tables
+   (statsmodels: OLS + Newey-West, breakpoint profile)      playground: read-only views
                                                                          │
                           Streamlit app ── connects as gts_reader (read-only role) ◄─┘
-                           ├─ Home · Climate Explorer · Warming Map (Plotly)
+                           ├─ Home · Climate Explorer · Warming Map · Climate Drivers (Plotly)
                            └─ SQL Playground ── sql_guard (sqlglot) ── DB privileges + 3 s timeout
 ```
 
@@ -111,10 +130,12 @@ python scripts/clean_data.py           # global series (a NASA snapshot is commi
 python scripts/load_data.py
 python scripts/download_grid.py        # grid + country borders (~29 MB download)
 python scripts/load_grid.py            # ~25M rows, about a minute
+python scripts/load_drivers.py         # ENSO and CO2 (committed NOAA snapshots)
+python scripts/run_models.py           # regression, ENSO-adjusted series, breakpoint
 
 # 5. Run
 streamlit run app/main.py              # http://localhost:8501
-pytest                                 # 153 tests
+pytest                                 # 181 tests
 python scripts/benchmark.py            # optional: re-run the performance study
 ```
 
@@ -130,6 +151,8 @@ python scripts/benchmark.py            # optional: re-run the performance study
 | `grid_anomalies` | 25.4 M | Partitioned by decade; anomaly as lossless `SMALLINT` hundredths |
 | `countries`, `cell_countries` | 242 / 8.3 k | Natural Earth borders and their overlap with every cell (km²) |
 | `v_grid_annual`, `v_grid_trends`, `v_country_annual` | | Materialized aggregates for the app |
+| `enso_oni`, `co2_monthly` | 921 / 824 | NOAA ONI (stored on the centre month) and Mauna Loa CO₂ |
+| `model_results`, `model_enso_adjusted`, `model_breakpoints` | | Outputs of `run_models.py` |
 | `playground.*` | | The only objects the app's read-only role can see |
 
 Design notes and validation: [`docs/DATA.md`](docs/DATA.md). Among the checks: NASA's annual
@@ -145,6 +168,7 @@ the NetCDF file exactly.
 | [`intermediate_queries.sql`](sql/intermediate_queries.sql) | 11 | CTEs, self-join, LEFT JOIN, subqueries, EXISTS, UNION ALL, CASE, FILTER, dates |
 | [`advanced_queries.sql`](sql/advanced_queries.sql) | 16 | RANK / DENSE_RANK / ROW_NUMBER, LAG / LEAD, ROWS vs RANGE windows, NTILE, gaps-and-islands, LATERAL, ROLLUP, regr_slope, corr, percentile_cont |
 | [`spatial_queries.sql`](sql/spatial_queries.sql) | 10 | Spatial joins, ST_Contains, KNN `<->`, ST_Area on geography, area weighting, DISTINCT ON |
+| [`drivers_queries.sql`](sql/drivers_queries.sql) | 9 | Detrending with regr_slope / regr_intercept, lagged joins with make_interval, correlation over generated lags, growth rates |
 
 Every query is commented, available in the Playground and runs in CI.
 
@@ -159,16 +183,17 @@ is stopped after 3 seconds. See [`docs/SECURITY.md`](docs/SECURITY.md).
 | Suite | Tests | Covers |
 |---|---:|---|
 | `test_clean_data.py` | 13 | Parsing, `***` → NULL, long format, NASA J-D match, baseline check |
-| `test_database.py` | 15 | Row counts, SQL annual mean = NASA J-D, constraints, keys, SQL library runs |
+| `test_database.py` | 16 | Row counts, SQL annual mean = NASA J-D, constraints, keys, SQL library runs |
 | `test_grid.py` | 9 | Area weights, valid geometry, lossless storage, grid = NASA global mean, partition pruning |
-| `test_sql_guard.py` | 35 | 24 attack queries blocked, all library queries allowed |
+| `test_drivers.py` | 10 | ONI season mapping, NULL sentinels, model signs, Newey-West wider than classical |
+| `test_sql_guard.py` | 36 | 24 attack queries blocked, all library queries allowed |
 | `test_reader_role.py` | 10 | Database-level protection without the validator |
-| `test_queries.py` | 38 | Static checks on the app's SQL (placeholders) |
+| `test_queries.py` | 56 | Static checks on the app's SQL (placeholders) |
 | `test_challenges.py` | 15 | Challenge references and the answer checker |
-| `test_app.py` | 14 | Every page renders in both languages; Playground runs and blocks queries |
+| `test_app.py` | 16 | Every page renders in both languages; Playground runs and blocks queries |
 
-GitHub Actions builds the database on PostGIS, loads the series and a grid subset, and runs
-all tests on every push.
+GitHub Actions builds the database on PostGIS, loads the series, a grid subset and the drivers,
+runs the models and all tests on every push.
 
 ## Project structure
 
@@ -176,9 +201,9 @@ all tests on every push.
 app/                Streamlit app (main.py, views/, sql_guard.py, queries.py, i18n.py, ...)
 data/raw/           NASA series snapshot + manifests (grid files are downloaded)
 data/processed/     cleaned CSVs (generated)
-database/           schema.sql, spatial_schema.sql, roles.sql
-docs/               DATA.md, PERFORMANCE.md (+ benchmark_results.json), SECURITY.md
-scripts/            download, clean, load, grid, setup and benchmark scripts
+database/           schema.sql, spatial_schema.sql, drivers_schema.sql, roles.sql
+docs/               DATA.md, METHODS.md, PERFORMANCE.md (+ benchmark_results.json), SECURITY.md
+scripts/            download, clean, load, grid, drivers, models, setup and benchmark scripts
 sql/                SQL analysis library
 tests/              pytest suites
 ```
@@ -189,5 +214,7 @@ tests/              pytest suites
   GISTEMP Team, 2026: GISS Surface Temperature Analysis (GISTEMP), version 4. NASA Goddard
   Institute for Space Studies. Dataset accessed 2026-11-21.
 - Natural Earth 1:50m Admin 0 Countries, v5.1.2 — public domain, https://www.naturalearthdata.com/
+- NOAA Climate Prediction Center, Oceanic Niño Index — https://www.cpc.ncep.noaa.gov/
+- NOAA Global Monitoring Laboratory, Mauna Loa CO₂ — https://gml.noaa.gov/ccgg/trends/
 
 Code: MIT License © 2026 Zeynep Sönmez. The data is subject to its providers' terms.

@@ -50,7 +50,9 @@ def database_available() -> bool:
 def read_df(sql: str, params: dict | None = None) -> pd.DataFrame:
     """Run one of the app's own (trusted, parameterised) queries and cache the result."""
     with connect() as conn, conn.cursor() as cur:
-        cur.execute(sql, params or {})
+        # params=None (not {}) when there are no placeholders: psycopg then sends the text
+        # as-is, so a '%' inside a comment of a sql/ library query cannot break it.
+        cur.execute(sql, params or None)
         columns = [column.name for column in cur.description]
         return pd.DataFrame(cur.fetchall(), columns=columns)
 

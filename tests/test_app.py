@@ -28,7 +28,7 @@ def open_page(page: str | None = None, lang: str = "en") -> AppTest:
 
 
 @pytest.mark.parametrize("lang", ["en", "tr"])
-@pytest.mark.parametrize("page", [None, "views/explorer.py", "views/map.py", "views/playground.py"])
+@pytest.mark.parametrize("page", [None, "views/explorer.py", "views/map.py", "views/drivers.py", "views/playground.py"])
 def test_pages_render(page, lang):
     open_page(page, lang)
 

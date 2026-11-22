@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import re
 
+from library import load_samples
+
 # Complete-year annual means: reused by several charts.
 _ANNUAL = """
     SELECT region, year, AVG(anomaly) AS anomaly
@@ -245,6 +247,64 @@ SELECT code,
 FROM   series
 GROUP  BY code, name
 ORDER  BY rate_since_1970 DESC;"""
+
+# --- Climate drivers (ENSO, CO2, model outputs) ------------------------------------------------
+
+ENSO_TEMP = """-- ONI (ENSO index) and the global monthly anomaly, side by side
+SELECT e.obs_date, e.oni, e.phase, m.anomaly
+FROM   v_enso e
+LEFT   JOIN v_monthly m ON m.obs_date = e.obs_date AND m.region = 'GLB'
+ORDER  BY e.obs_date;"""
+
+ADJUSTED_ANNUAL = """-- Observed and ENSO-adjusted global anomaly, annual means (model output)
+SELECT EXTRACT(YEAR FROM obs_date)::int AS year,
+       ROUND(AVG(observed), 3)          AS observed,
+       ROUND(AVG(enso_component), 3)    AS enso_part,
+       ROUND(AVG(adjusted), 3)          AS adjusted
+FROM   model_enso_adjusted
+GROUP  BY 1
+HAVING COUNT(*) = 12
+ORDER  BY 1;"""
+
+MODEL_RESULTS = """-- Every number reported by scripts/run_models.py
+SELECT metric, value, ci_low, ci_high, unit, method
+FROM   model_results
+ORDER  BY metric;"""
+
+BREAK_PROFILE = """-- Fit of the two-segment trend for every candidate breakpoint year
+SELECT break_year, sse, slope_before, slope_after
+FROM   model_breakpoints
+ORDER  BY break_year;"""
+
+ANNUAL_GLOBAL = """-- Annual global mean anomaly, complete years
+SELECT year, ROUND(AVG(anomaly), 3) AS anomaly
+FROM   v_monthly
+WHERE  region = 'GLB'
+GROUP  BY year
+HAVING COUNT(anomaly) = 12
+ORDER  BY year;"""
+
+CO2_TEMP_ANNUAL = """-- Annual mean CO2 and global anomaly (1959 onwards)
+SELECT m.year,
+       ROUND(AVG(c.co2_ppm), 2)   AS co2_ppm,
+       ROUND(AVG(m.anomaly), 3)   AS anomaly
+FROM   v_monthly m
+JOIN   v_co2     c ON c.obs_date = m.obs_date
+WHERE  m.region = 'GLB'
+GROUP  BY m.year
+HAVING COUNT(*) = 12
+ORDER  BY m.year;"""
+
+CO2_MONTHLY = """-- The Keeling curve: monthly and seasonally adjusted CO2 at Mauna Loa
+SELECT obs_date, co2_ppm, co2_deseason
+FROM   v_co2
+ORDER  BY obs_date;"""
+
+
+def library(code: str) -> str:
+    """The text of a query from the sql/ library (e.g. "D3"): the page runs the very same SQL."""
+    return next(s.sql for s in load_samples() if s.code == code)
+
 
 SCHEMA = """SELECT table_name, column_name, data_type
 FROM   information_schema.columns
