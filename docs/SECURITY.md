@@ -65,9 +65,10 @@ that writes are still refused — by missing privileges, not by the read-only fl
 
 | File | What it proves |
 |---|---|
-| `tests/test_sql_guard.py` | 24 attack queries are blocked; all 37 library queries are allowed |
+| `tests/test_sql_guard.py` | 40 attack queries are blocked; 12 harmless edge cases and all 78 library queries are allowed |
 | `tests/test_reader_role.py` | Without the validator, the database still blocks writes, base tables, file access, server programs and long queries |
-| `tests/test_app.py` | The Playground blocks a `DROP` and explains a permission error |
+| `tests/test_errors.py` | All 78 library queries run as `gts_reader` through the cost gate; expensive queries are refused before running; timeout and the streaming row limit work |
+| `tests/test_app.py` | The Playground blocks a `DROP`, refuses an expensive query at the cost gate and explains a permission error |
 
 ## Reporting
 
