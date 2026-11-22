@@ -20,7 +20,7 @@ import json
 import statistics
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from db import ROOT, get_connection
 
@@ -106,7 +106,7 @@ def relation_size(cur, name: str) -> int:
 
 
 def main() -> int:
-    results = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    results = {"generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
                "runs_per_query": RUNS, "queries": {k: v[0] for k, v in QUERIES.items()},
                "strategies": [], "materialized_view": None}
 

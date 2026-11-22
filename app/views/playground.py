@@ -37,7 +37,8 @@ with left:
         schema = read_df(q.SCHEMA)
         for table, columns in schema.groupby("table_name", sort=True):
             with st.expander(table, expanded=table == "v_monthly"):
-                st.markdown("\n".join(f"- `{c}` · {d}" for c, d in zip(columns.column_name, columns.data_type)))
+                pairs = zip(columns.column_name, columns.data_type, strict=True)
+                st.markdown("\n".join(f"- `{c}` · {d}" for c, d in pairs))
     with st.container(border=True):
         st.markdown(f"**{t('pg.samples')}**")
         st.selectbox(
@@ -98,30 +99,29 @@ with center:
                     st.plotly_chart(style_figure(fig, height=320, y_title=y), width="stretch")
 
 # --- Right: challenges ------------------------------------------------------------------------------
-with right:
-    with st.container(border=True):
-        solved = st.session_state["pg_solved"]
-        st.markdown(f"**{t('pg.challenges')}**")
-        st.progress(len(solved) / len(CHALLENGES), text=t("pg.ch.progress", done=len(solved), total=len(CHALLENGES)))
-        labels = [f"{'✓' if c.id in solved else '○'}  {i}. {c.topic}" for i, c in enumerate(CHALLENGES, 1)]
-        index = st.radio(t("pg.challenges"), range(len(CHALLENGES)), format_func=lambda i: labels[i],
-                         label_visibility="collapsed", key="pg_challenge")
-        challenge = CHALLENGES[index]
-        st.info(challenge.task[lang()])
-        with st.expander(t("pg.ch.hint")):
-            st.code(challenge.hint[lang()], language="sql", wrap_lines=True)
-        if st.button(t("pg.ch.check"), width="stretch", icon=":material/fact_check:"):
-            current = st.session_state.get("pg_result")
-            if current is None or current.frame is None:
-                st.warning(t("pg.ch.run_first"))
+with right, st.container(border=True):
+    solved = st.session_state["pg_solved"]
+    st.markdown(f"**{t('pg.challenges')}**")
+    st.progress(len(solved) / len(CHALLENGES), text=t("pg.ch.progress", done=len(solved), total=len(CHALLENGES)))
+    labels = [f"{'✓' if c.id in solved else '○'}  {i}. {c.topic}" for i, c in enumerate(CHALLENGES, 1)]
+    index = st.radio(t("pg.challenges"), range(len(CHALLENGES)), format_func=lambda i: labels[i],
+                     label_visibility="collapsed", key="pg_challenge")
+    challenge = CHALLENGES[index]
+    st.info(challenge.task[lang()])
+    with st.expander(t("pg.ch.hint")):
+        st.code(challenge.hint[lang()], language="sql", wrap_lines=True)
+    if st.button(t("pg.ch.check"), width="stretch", icon=":material/fact_check:"):
+        current = st.session_state.get("pg_result")
+        if current is None or current.frame is None:
+            st.warning(t("pg.ch.run_first"))
+        else:
+            reference = run_user_query(challenge.reference_sql).frame
+            correct, reason, values = compare(current.frame, reference, challenge.ordered)
+            if correct:
+                solved.add(challenge.id)
+                st.success(t("pg.ch.correct"))
+                st.balloons()
             else:
-                reference = run_user_query(challenge.reference_sql).frame
-                correct, reason, values = compare(current.frame, reference, challenge.ordered)
-                if correct:
-                    solved.add(challenge.id)
-                    st.success(t("pg.ch.correct"))
-                    st.balloons()
-                else:
-                    st.error(t("pg.ch.wrong", detail=t(reason, **values)))
+                st.error(t("pg.ch.wrong", detail=t(reason, **values)))
 
 footer()

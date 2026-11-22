@@ -148,7 +148,8 @@ def main() -> int:
             ("trend_annual_naive", annual_naive.params["year"] * 10, ca_n.loc["year", 0] * 10, ca_n.loc["year", 1] * 10,
              "°C per decade", f"annual means {MODEL_START}–{recent.year.max()}, classical CI"),
             ("trend_annual_hac", annual_hac.params["year"] * 10, ca_h.loc["year", 0] * 10, ca_h.loc["year", 1] * 10,
-             "°C per decade", f"annual means {MODEL_START}–{recent.year.max()}, Newey-West CI (maxlags={annual_maxlags})"),
+             "°C per decade",
+             f"annual means {MODEL_START}–{recent.year.max()}, Newey-West CI (maxlags={annual_maxlags})"),
             ("break_year", break_year, break_low, break_high, "year",
              f"two-segment hinge fit on annual means {annual.year.min()}–{annual.year.max()}, "
              f"approx. 95% range from an F test on the SSE profile"),

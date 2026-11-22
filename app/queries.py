@@ -125,7 +125,7 @@ WHERE  r.kind = 'zonal'
 GROUP  BY r.code, r.lat_min, r.lat_max
 ORDER  BY r.lat_max DESC;"""
 
-KPIS = f"""-- Headline numbers for one region
+KPIS = """-- Headline numbers for one region
 WITH annual AS (
     SELECT year, AVG(anomaly) AS anomaly
     FROM   v_monthly

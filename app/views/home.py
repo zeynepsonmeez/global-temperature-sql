@@ -57,13 +57,12 @@ with hero:
     a.page_link("views/explorer.py", label=t("home.exp.cta"), icon=":material/monitoring:")
     b.page_link("views/playground.py", label=t("home.pg.cta"), icon=":material/terminal:")
 
-with globe:
-    with st.container(border=True):
-        st.markdown(f"**{t('home.globe.title')}**")
-        st.caption(t("home.globe.caption"))
-        st.plotly_chart(globe_figure(), width="stretch", config={"displayModeBar": False})
-        with st.expander(t("sql.behind")):
-            st.code(q.GLOBE, language="sql")
+with globe, st.container(border=True):
+    st.markdown(f"**{t('home.globe.title')}**")
+    st.caption(t("home.globe.caption"))
+    st.plotly_chart(globe_figure(), width="stretch", config={"displayModeBar": False})
+    with st.expander(t("sql.behind")):
+        st.code(q.GLOBE, language="sql")
 
 f1, f2, f3, f4 = st.columns(4)
 last = f"{month_names()[facts.last_month.month - 1]} {facts.last_month.year}"
@@ -97,7 +96,8 @@ with right, st.container(border=True):
     st.markdown("### :material/terminal: SQL Playground")
     st.caption(t("home.pg.sub"))
     st.write(t("home.pg.desc"))
-    st.code("SELECT year, anomaly,\n       RANK() OVER (ORDER BY anomaly DESC)\nFROM   v_monthly\nWHERE  region = 'GLB'\nLIMIT  10;",
+    st.code("SELECT year, anomaly,\n       RANK() OVER (ORDER BY anomaly DESC)\n"
+            "FROM   v_monthly\nWHERE  region = 'GLB'\nLIMIT  10;",
             language="sql")
     st.page_link("views/playground.py", label=t("home.pg.cta"), icon=":material/arrow_forward:")
 

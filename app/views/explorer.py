@@ -4,8 +4,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import queries as q
-from components import (COOL, DIVERGING, GRID, HEAT, HEAT_LIGHT, MUTED, REGION_COLORS,
-                        footer, sql_panel, style_figure)
+from components import COOL, DIVERGING, GRID, HEAT, HEAT_LIGHT, MUTED, REGION_COLORS, footer, sql_panel, style_figure
 from database import read_df, read_row
 from i18n import month_names, t
 
@@ -40,7 +39,8 @@ kpi = read_row(q.KPIS, {"region": focus})
 k1, k2, k3, k4 = st.columns(4)
 k1.metric(f"{t('kpi.latest')} ({kpi.latest_year})", f"{kpi.latest_anomaly:+.2f} °C")
 k2.metric(t("kpi.rate"), f"{kpi.rate_since_1970:+.2f} {t('unit.decade')}")
-k3.metric(t("kpi.hottest"), f"{kpi.hottest_year}", f"{kpi.hottest_anomaly:+.2f} °C", delta_color="off", delta_arrow="off")
+k3.metric(t("kpi.hottest"), f"{kpi.hottest_year}", f"{kpi.hottest_anomaly:+.2f} °C",
+          delta_color="off", delta_arrow="off")
 k4.metric(t("kpi.nulls"), f"{kpi.null_months}")
 st.caption(f"{t(f'region.{focus}')} · GISTEMP v4")
 
@@ -73,7 +73,7 @@ with tabs[1]:
     ordered = df.sort_values("anomaly")
     fig = go.Figure(go.Bar(
         x=ordered.anomaly, y=ordered.year.astype(str), orientation="h",
-        marker_color=HEAT, text=[f"#{r}  {a:+.2f}" for r, a in zip(ordered["rank"], ordered.anomaly)],
+        marker_color=HEAT, text=[f"#{r}  {a:+.2f}" for r, a in zip(ordered["rank"], ordered.anomaly, strict=True)],
         textposition="outside", hovertemplate="%{y}: %{x:+.2f} °C<extra></extra>",
     ))
     fig = style_figure(fig, height=440, y_title="")
@@ -161,7 +161,7 @@ with tabs[6]:
     params = dict(period)
     df = read_df(q.BANDS, params)
     st.subheader(t("bands.title"))
-    labels = [f"{code}  ·  {name}" for code, name in zip(df.code, df.name)]
+    labels = [f"{code}  ·  {name}" for code, name in zip(df.code, df.name, strict=True)]
     fig = go.Figure(go.Bar(
         x=df.rate_per_decade, y=labels, orientation="h", marker_color=HEAT,
         text=[f"{v:+.2f}" for v in df.rate_per_decade], textposition="outside",

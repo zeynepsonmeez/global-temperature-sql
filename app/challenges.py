@@ -73,7 +73,8 @@ CHALLENGES = [
          "tr": "GLB, NH ve SH için 1970'ten beri ısınma hızı (°C / 10 yıl), tam yılların yıllık ortalamalarından. "
                "Sütunlar: bölge, hız."},
         {"en": "Annual means per region in a CTE, then regr_slope(anomaly, year) * 10 grouped by region.",
-         "tr": "Bölge başına yıllık ortalamalar bir CTE'de, sonra bölgeye göre gruplayarak regr_slope(anomaly, year) * 10."},
+         "tr": "Bölge başına yıllık ortalamalar bir CTE'de, sonra bölgeye göre gruplayarak "
+               "regr_slope(anomaly, year) * 10."},
         """WITH annual AS (
             SELECT region, year, AVG(anomaly) AS anomaly FROM v_monthly
             WHERE year >= 1970 GROUP BY region, year HAVING COUNT(anomaly) = 12)

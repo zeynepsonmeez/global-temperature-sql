@@ -4,8 +4,8 @@ import numpy as np
 import psycopg
 import pytest
 
-from db import ROOT, get_connection
 from database import connect as reader_connect
+from db import ROOT, get_connection
 
 GRID_FILE = ROOT / "data" / "raw" / "grid" / "gistemp1200_GHCNv4_ERSSTv5.nc.gz"
 

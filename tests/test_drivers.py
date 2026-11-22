@@ -8,7 +8,6 @@ import load_drivers as ld
 from db import get_connection
 from library import load_samples
 
-
 # --- Loader: parsing and validation (no database) ----------------------------------------
 
 @pytest.fixture(scope="module")

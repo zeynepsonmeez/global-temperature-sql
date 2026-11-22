@@ -4,8 +4,19 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import queries as q
-from components import (COAST, COMPARE_COLORS, DIVERGING, GRID, LAND, MUTED, OCEAN, WARM_SCALE,
-                        footer, sql_panel, style_figure)
+from components import (
+    COAST,
+    COMPARE_COLORS,
+    DIVERGING,
+    GRID,
+    LAND,
+    MUTED,
+    OCEAN,
+    WARM_SCALE,
+    footer,
+    sql_panel,
+    style_figure,
+)
 from database import read_df, read_row
 from i18n import t
 
@@ -69,7 +80,7 @@ with grid_tab:
 # 3. Compare countries ------------------------------------------------------------------------------
 with country_tab:
     options = read_df(q.COUNTRY_LIST)
-    names = dict(zip(options.adm0_a3, options.country))
+    names = dict(zip(options.adm0_a3, options.country, strict=True))
     picked = st.multiselect(t("map.compare.pick"), list(names), default=["TUR"] if "TUR" in names else [],
                             format_func=names.get, max_selections=len(COMPARE_COLORS), key="map_countries")
     smooth = st.toggle(t("exp.smooth"), value=True, key="map_smooth")
@@ -84,7 +95,7 @@ with country_tab:
     # Global mean first (grey, behind), then each country in its own colour.
     fig = go.Figure()
     order = ["GLB", *picked]
-    colors = {"GLB": MUTED, **dict(zip(picked, COMPARE_COLORS))}
+    colors = {"GLB": MUTED, **dict(zip(picked, COMPARE_COLORS, strict=False))}
     for code in order:
         part = series[series.code == code]
         label = t("map.global") if code == "GLB" else names[code]

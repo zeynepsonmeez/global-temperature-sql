@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from db import ROOT
 from download_data import download
@@ -33,7 +33,7 @@ SOURCES = {
 
 def main() -> int:
     DRIVERS_DIR.mkdir(parents=True, exist_ok=True)
-    manifest = {"downloaded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "files": {}}
+    manifest = {"downloaded_at": datetime.now(UTC).isoformat(timespec="seconds"), "files": {}}
     for name, (url, description) in SOURCES.items():
         try:
             content, last_modified = download(url)

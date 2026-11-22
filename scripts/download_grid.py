@@ -14,10 +14,10 @@ from __future__ import annotations
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from download_data import download
 from db import ROOT
+from download_data import download
 
 GRID_DIR = ROOT / "data" / "raw" / "grid"
 
@@ -36,7 +36,7 @@ SOURCES = {
 
 def main() -> int:
     GRID_DIR.mkdir(parents=True, exist_ok=True)
-    manifest = {"downloaded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "files": {}}
+    manifest = {"downloaded_at": datetime.now(UTC).isoformat(timespec="seconds"), "files": {}}
 
     for name, (url, description) in SOURCES.items():
         try:

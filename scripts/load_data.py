@@ -44,7 +44,9 @@ def main() -> int:
     monthly = read_processed("monthly_anomalies.csv")
     zonal = read_processed("zonal_annual_anomalies.csv")
 
-    with get_connection() as conn:  # commits on success, rolls back on exception
+    # The connection block commits on success and rolls back on any exception;
+    # kept separate from the cursor block so that boundary stays visible.
+    with get_connection() as conn:  # noqa: SIM117
         with conn.cursor() as cur:
             # 1. Regions: insert new ones, update names/bounds of existing ones.
             cur.executemany(

@@ -38,8 +38,11 @@ def scalar(cur, sql, params=None):
 
 
 def test_row_counts_match_processed_files(cur):
-    monthly = sum(1 for _ in open(cd.PROCESSED_DIR / "monthly_anomalies.csv")) - 1
-    zonal = sum(1 for _ in open(cd.PROCESSED_DIR / "zonal_annual_anomalies.csv")) - 1
+    def data_rows(name: str) -> int:          # lines minus the header
+        return len((cd.PROCESSED_DIR / name).read_text(encoding="utf-8").splitlines()) - 1
+
+    monthly = data_rows("monthly_anomalies.csv")
+    zonal = data_rows("zonal_annual_anomalies.csv")
     assert scalar(cur, "SELECT count(*) FROM v_monthly") == monthly
     assert scalar(cur, "SELECT count(*) FROM v_annual") == zonal
 
@@ -57,7 +60,7 @@ def test_sql_annual_mean_matches_nasa_j_d(cur):
     )
     sql_annual = {year: float(value) for year, value in cur.fetchall()}
     nasa = cd.read_wide_monthly(cd.RAW_DIR / cd.MONTHLY_FILES["GLB"]).dropna(subset=["J-D"])
-    nasa_annual = dict(zip(nasa["Year"], nasa["J-D"]))
+    nasa_annual = dict(zip(nasa["Year"], nasa["J-D"], strict=True))
 
     assert sql_annual.keys() == nasa_annual.keys()
     worst = max(abs(sql_annual[y] - nasa_annual[y]) for y in sql_annual)

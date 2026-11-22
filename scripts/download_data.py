@@ -14,7 +14,7 @@ import hashlib
 import json
 import sys
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 BASE_URL = "https://data.giss.nasa.gov/gistemp/tabledata_v4"
@@ -43,7 +43,7 @@ def main() -> int:
     manifest = {
         "source": "NASA GISS Surface Temperature Analysis (GISTEMP v4)",
         "source_url": "https://data.giss.nasa.gov/gistemp/",
-        "downloaded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "downloaded_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "files": {},
     }
 
