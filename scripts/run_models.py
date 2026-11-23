@@ -175,6 +175,7 @@ def main() -> int:
         with cur.copy("COPY model_breakpoints (break_year, sse, slope_before, slope_after) FROM STDIN") as copy:
             for row in profile.itertuples(index=False):
                 copy.write_row((int(row.break_year), row.sse, row.slope_before, row.slope_after))
+        cur.execute("ANALYZE model_results, model_enso_adjusted, model_breakpoints")   # see load_data.py
 
     print(f"OK     ENSO lag chosen by AIC: {lag} months  (AIC: " +
           ", ".join(f"{k}:{v:.0f}" for k, v in aic.items()) + ")")

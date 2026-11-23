@@ -151,7 +151,7 @@ python scripts/run_models.py           # regression, ENSO-adjusted series, break
 
 # 5. Run
 streamlit run app/main.py              # http://localhost:8501
-pytest                                 # 552 test cases
+pytest                                 # 556 test cases
 python scripts/benchmark.py            # optional: re-run the performance study
 ```
 
@@ -228,7 +228,7 @@ See [`docs/SECURITY.md`](docs/SECURITY.md).
 |---|---:|---|
 | `test_clean_data.py` | 13 | Parsing, `***` → NULL, long format, NASA J-D match, baseline check |
 | `test_validation.py` | 7 | Every validation rule rejects the problem it is written for |
-| `test_database.py` | 16 | Row counts, SQL annual mean = NASA J-D, constraints, keys, SQL library runs |
+| `test_database.py` | 20 | Row counts, SQL annual mean = NASA J-D, constraints, keys, SQL library runs, planner statistics after loading |
 | `test_grid.py` | 9 | Area weights, valid geometry, lossless storage, grid = NASA global mean, partition pruning |
 | `test_findings.py` | 9 | Every claim in the Findings table above, recomputed from the database |
 | `test_drivers.py` | 10 | ONI season mapping, NULL sentinels, model signs, Newey-West wider than classical |
@@ -243,14 +243,14 @@ See [`docs/SECURITY.md`](docs/SECURITY.md).
 | `test_i18n.py` | 196 | Every text in EN and TR, matching placeholders, every key used in the code exists |
 | `test_app.py` | 18 | Every page renders in both languages; the globe loads plotly.js locally; Playground runs and blocks queries |
 
-**552 test cases from 106 test functions** — many are parametrised (for example one case per
+**556 test cases from 107 test functions** — many are parametrised (for example one case per
 translation key or per attack query).
 
 GitHub Actions runs two jobs on every push: **lint** (ruff, sqlfluff) and **test**, which builds
 the database on PostGIS, runs the whole pipeline under coverage (with the grid from 2015 only), then all
 tests, and writes the coverage table to the job summary. On that subset the two tests that need
 decades of grid data (land vs ocean warming, the country comparison) skip, so CI reports
-550 passed and 2 skipped.
+554 passed and 2 skipped.
 
 A second, scheduled workflow (**Data freshness**, on the 16th of each month or on demand)
 checks whether NASA has published a newer GISTEMP release than the committed snapshot

@@ -53,6 +53,12 @@ an index was missing on `cell_countries (cell_id)` (query S6 cost 3.4 M, now und
 query S9 exceeded the reader's temporary-file limit and failed in the Playground (rewritten to
 avoid a large sort). `tests/test_errors.py` now runs every library query as the read-only role
 through the gate, exactly as a visitor would.
+
+The gate is only as good as the planner's statistics. Right after loading, before autovacuum
+had analysed the tables, the planner saw them as nearly empty and estimated a triple self-join
+of `v_monthly` at 1,800 instead of about 2 billion, so the gate let it through. CI caught this
+intermittently. The load scripts now run `ANALYZE` as their last step, and
+`tests/test_database.py` checks that the planner's row estimates match the loaded rows.
 - **Network:** the database port is bound to `127.0.0.1` only (`docker-compose.yml`).
 
 ### Lesson learned while testing

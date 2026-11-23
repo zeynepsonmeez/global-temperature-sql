@@ -81,6 +81,7 @@ def main() -> int:
             for row in co2.itertuples(index=False):
                 days = None if pd.isna(row.days_measured) else int(row.days_measured)
                 copy.write_row((row.obs_date.date(), row.co2_ppm, row.co2_deseason, days))
+        cur.execute("ANALYZE enso_oni, co2_monthly")            # planner statistics (see load_data.py)
     print(f"OK     enso_oni     {len(oni):>5} months  ({oni.obs_date.min():%Y-%m} – {oni.obs_date.max():%Y-%m})")
     print(f"OK     co2_monthly  {len(co2):>5} months  ({co2.obs_date.min():%Y-%m} – {co2.obs_date.max():%Y-%m}), "
           f"days_measured NULL: {co2.days_measured.isna().sum()}")

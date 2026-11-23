@@ -119,3 +119,13 @@ def test_foreign_key_rejects_unknown_region(admin_cur):
             VALUES ((SELECT dataset_id FROM v_latest_dataset), 9999, 2000, 1, 0.1)
             """
         )
+
+
+@pytest.mark.parametrize("table", ["monthly_anomalies", "zonal_annual_anomalies", "enso_oni", "co2_monthly"])
+def test_planner_statistics_match_the_loaded_rows(admin_cur, table):
+    """The load scripts run ANALYZE. Without it a freshly loaded table looks tiny to the
+    planner, and the Playground's cost gate let a 2-billion-cost query through as costing 1,800."""
+    admin_cur.execute(f"EXPLAIN (FORMAT JSON) SELECT * FROM {table}")
+    estimated = admin_cur.fetchone()[0][0]["Plan"]["Plan Rows"]
+    admin_cur.execute(f"SELECT count(*) FROM {table}")
+    assert estimated == pytest.approx(admin_cur.fetchone()[0], rel=0.1)

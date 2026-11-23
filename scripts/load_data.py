@@ -106,6 +106,10 @@ def main() -> int:
                 if actual != expected:
                     raise RuntimeError(f"{table}: expected {expected} rows, found {actual}")
 
+            # 5. Planner statistics now, not whenever autovacuum gets to it: the Playground's
+            #    cost gate asks the planner, which otherwise sees freshly loaded tables as tiny.
+            cur.execute("ANALYZE regions, datasets, monthly_anomalies, zonal_annual_anomalies")
+
     print(f"OK     dataset_id={dataset_id}  ({DATASET_NAME}, downloaded {manifest['downloaded_at']})")
     print(f"OK     regions                 {len(regions):>5} rows")
     print(f"OK     monthly_anomalies       {len(monthly):>5} rows")
