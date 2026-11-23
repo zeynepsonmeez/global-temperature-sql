@@ -14,3 +14,4 @@ consequences and the alternatives that were considered. Format adapted from Mich
 | [0006](0006-postgis-in-its-own-schema.md) | Install PostGIS in its own schema | Accepted |
 | [0007](0007-regression-design.md) | Trend + ENSO regression from 1970 with Newey-West errors | Accepted |
 | [0008](0008-streamlit-without-sidebar.md) | Streamlit UI without a sidebar, light theme by default | Accepted |
+| [0009](0009-streamlit-customisations.md) | Streamlit customisations outside its public API, kept in one place and pinned | Accepted |
