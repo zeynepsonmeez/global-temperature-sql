@@ -29,6 +29,8 @@ gatherUsageStats = false
 
 [server]
 runOnSave = true
+# Serves app/static/ at /app/static/: the home globe loads plotly.js from there, not a CDN.
+enableStaticServing = true
 
 [client]
 # Hide developer controls (Deploy, rerun, clear cache) from visitors; the theme menu stays.

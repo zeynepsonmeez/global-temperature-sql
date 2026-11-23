@@ -1,14 +1,20 @@
 """Home page: hero, rotatable latitude-band globe, dataset facts and a card for every page."""
 
+from pathlib import Path
+
 import numpy as np
+import plotly
 import plotly.graph_objects as go
 import streamlit as st
+from plotly.offline import get_plotlyjs
 
 import queries as q
 from components import COAST, GRID, LAND, OCEAN, WARM_SCALE, footer
 from database import read_df, read_row
 from i18n import month_names, t
 from library import load_samples
+
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"     # app/static, served at /app/static
 
 bands = read_df(q.GLOBE)
 facts = read_row(q.FACTS)
@@ -54,7 +60,7 @@ def globe_figure() -> go.Figure:
 # Spins the globe slowly until the visitor touches it (click, drag, touch or scroll); a small
 # button pauses or resumes it. Visitors who ask the system for reduced motion start paused.
 # st.plotly_chart cannot animate on its own, so the figure is rendered as a small HTML page
-# in st.iframe and rotated through Plotly.relayout.
+# in st.iframe and rotated through Plotly.relayout. plotly.js is served locally (no CDN).
 _SPIN_SCRIPT = """
 <style>
   html, body { margin: 0; background: transparent; }
@@ -91,8 +97,23 @@ _SPIN_SCRIPT = """
 """
 
 
+@st.cache_resource
+def plotly_js_url() -> str:
+    """Serve the plotly.js bundled with the installed plotly package, so the globe works offline.
+
+    The file is written once into app/static/ (served by enableStaticServing, git-ignored),
+    named after the package version so an upgrade never serves a stale copy.
+    """
+    name = f"plotly-{plotly.__version__}.min.js"
+    target = STATIC_DIR / name
+    if not target.exists():
+        STATIC_DIR.mkdir(exist_ok=True)
+        target.write_text(get_plotlyjs(), encoding="utf-8")
+    return f"/app/static/{name}"
+
+
 def render_globe(fig: go.Figure) -> None:
-    chart = fig.to_html(full_html=False, include_plotlyjs="cdn", div_id="globe",
+    chart = fig.to_html(full_html=False, include_plotlyjs=plotly_js_url(), div_id="globe",
                         config={"displayModeBar": False, "responsive": True})
     script = _SPIN_SCRIPT.replace("__PAUSE__", t("home.globe.pause")).replace("__PLAY__", t("home.globe.play"))
     html = f'<div class="wrap"><button id="globe-toggle" type="button"></button>{chart}</div>{script}'

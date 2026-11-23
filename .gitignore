@@ -30,3 +30,6 @@ Thumbs.db
 # Large downloads (re-created by scripts/download_grid.py); the manifest is committed
 data/raw/grid/*
 !data/raw/grid/manifest.json
+
+# plotly.js written by app/views/home.py for offline use
+app/static/

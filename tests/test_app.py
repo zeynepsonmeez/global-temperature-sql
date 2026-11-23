@@ -6,6 +6,7 @@ without an exception, in both languages, and that the Playground runs and blocks
 
 from pathlib import Path
 
+import plotly
 import pytest
 from streamlit.testing.v1 import AppTest
 
@@ -31,6 +32,16 @@ def open_page(page: str | None = None, lang: str = "en") -> AppTest:
 @pytest.mark.parametrize("page", [None, "views/explorer.py", "views/map.py", "views/drivers.py", "views/playground.py"])
 def test_pages_render(page, lang):
     open_page(page, lang)
+
+
+def test_home_globe_loads_plotly_locally():
+    """The globe must work without internet (a classroom demo): plotly.js is served from app/static."""
+    at = open_page()
+    script = ROOT / "app" / "static" / f"plotly-{plotly.__version__}.min.js"
+    assert script.stat().st_size > 1_000_000
+    html = at.get("iframe")[0].proto.srcdoc
+    assert f'src="/app/static/{script.name}"' in html
+    assert "cdn.plot.ly" not in html
 
 
 def test_explorer_shows_kpis_and_tabs():
