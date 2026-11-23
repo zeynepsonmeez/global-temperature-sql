@@ -16,6 +16,7 @@ interactive maps and charts, and a secure SQL Playground.
 ![Ruff](https://img.shields.io/badge/lint-ruff-261230)
 ![SQLFluff](https://img.shields.io/badge/SQL-sqlfluff-c22e2e)
 ![License](https://img.shields.io/badge/license-MIT-green)
+[![Kaggle dataset](https://img.shields.io/badge/Kaggle-dataset-20BEFF)](https://www.kaggle.com/datasets/zeynepsonmeez/global-and-country-temperature-anomalies-1880-2025)
 
 ![Home page: a slowly turning globe coloured by the warming of each latitude band](docs/images/home.png)
 
@@ -290,5 +291,9 @@ change; the results are verified by the automated test suite.
 - Natural Earth 1:50m Admin 0 Countries, v5.1.2 — public domain, https://www.naturalearthdata.com/
 - NOAA Climate Prediction Center, Oceanic Niño Index — https://www.cpc.ncep.noaa.gov/
 - NOAA Global Monitoring Laboratory, Mauna Loa CO₂ — https://gml.noaa.gov/ccgg/trends/
+
+The analysis-ready files (country series, trends and the annual grid) are published as a Kaggle
+dataset: https://www.kaggle.com/datasets/zeynepsonmeez/global-and-country-temperature-anomalies-1880-2025
+(DOI: 10.34740/kaggle/dsv/22679721), produced by `scripts/export_kaggle.py`.
 
 Code: MIT License © 2026 Zeynep Sönmez. The data is subject to its providers' terms.
