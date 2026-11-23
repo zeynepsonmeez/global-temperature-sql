@@ -274,6 +274,11 @@ tests/              pytest suites
 Dockerfile          image for the Streamlit app (docker compose --profile app)
 requirements*.txt   app only / app + pipeline + tests / + dev tools
 ```
+## AI Assistance
+
+Much of the code, tests, and documentation was drafted with assistance from Claude Opus 5.5
+(Anthropic). I defined the scope, made the design decisions, and reviewed and tested every
+change; the results are verified by the automated test suite.
 
 ## Data sources and license
 
