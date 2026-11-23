@@ -151,8 +151,9 @@ python scripts/run_models.py           # regression, ENSO-adjusted series, break
 
 # 5. Run
 streamlit run app/main.py              # http://localhost:8501
-pytest                                 # 556 test cases
+pytest                                 # 558 test cases
 python scripts/benchmark.py            # optional: re-run the performance study
+python scripts/export_kaggle.py        # optional: analysis-ready files for Kaggle in data/kaggle/
 ```
 
 **Run the app in Docker instead** (after step 4 — the pipeline writes the data, the container
@@ -237,20 +238,21 @@ See [`docs/SECURITY.md`](docs/SECURITY.md).
 | `test_reader_role.py` | 10 | Database-level protection without the validator |
 | `test_errors.py` | 92 | Every library query run as the read-only role through the cost gate; expensive queries refused before running; plain error messages, timeout, streaming row limit |
 | `test_queries.py` | 56 | Static checks on the app's SQL (placeholders) |
+| `test_export_kaggle.py` | 2 | The Kaggle export writes every file, a description that matches it and valid metadata |
 | `test_freshness.py` | 5 | The freshness check finds added and revised months and never touches the committed snapshot |
 | `test_helpers.py` | 14 | SQL literal quoting, library numbering, psql command (password never on the command line) |
 | `test_challenges.py` | 35 | Challenge references and the answer checker |
 | `test_i18n.py` | 196 | Every text in EN and TR, matching placeholders, every key used in the code exists |
 | `test_app.py` | 18 | Every page renders in both languages; the globe loads plotly.js locally; Playground runs and blocks queries |
 
-**556 test cases from 107 test functions** — many are parametrised (for example one case per
+**558 test cases from 109 test functions** — many are parametrised (for example one case per
 translation key or per attack query).
 
 GitHub Actions runs two jobs on every push: **lint** (ruff, sqlfluff) and **test**, which builds
 the database on PostGIS, runs the whole pipeline under coverage (with the grid from 2015 only), then all
 tests, and writes the coverage table to the job summary. On that subset the two tests that need
 decades of grid data (land vs ocean warming, the country comparison) skip, so CI reports
-554 passed and 2 skipped.
+556 passed and 2 skipped.
 
 A second, scheduled workflow (**Data freshness**, on the 16th of each month or on demand)
 checks whether NASA has published a newer GISTEMP release than the committed snapshot
@@ -268,7 +270,7 @@ data/processed/     cleaned CSVs (generated)
 database/           schema.sql, spatial_schema.sql, drivers_schema.sql, roles.sql
 docs/               DATA.md, METHODS.md, PERFORMANCE.md (+ benchmark_results.json), SECURITY.md
 docs/adr/           architecture decision records
-scripts/            download, clean, load, grid, drivers, models, setup and benchmark scripts
+scripts/            download, clean, load, grid, drivers, models, setup, benchmark and export scripts
 sql/                SQL analysis library
 tests/              pytest suites
 Dockerfile          image for the Streamlit app (docker compose --profile app)
