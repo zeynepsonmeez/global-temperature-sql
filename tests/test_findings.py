@@ -74,7 +74,7 @@ def test_warming_accelerated_around_1975(run):
     assert float(after) > 5 * float(before)
 
 
-def test_land_warms_twice_as_fast_as_ocean(run):
+def test_land_warms_twice_as_fast_as_ocean(grid_cur, run):     # grid_cur: skips without the grid
     rates = {surface: float(rate) for surface, _, rate in run("S6")}
     if not rates:
         pytest.skip("full grid not loaded (CI loads a subset)")

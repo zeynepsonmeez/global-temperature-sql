@@ -18,7 +18,7 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM"]
 "app/i18n.py" = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["challenges", "clean_data", "components", "database", "db", "download_data",
+known-first-party = ["challenges", "check_freshness", "clean_data", "components", "database", "db", "download_data",
                      "download_drivers", "download_grid", "i18n", "library", "load_drivers",
                      "load_grid", "queries", "run_models", "setup_database", "sql_guard"]
 

@@ -1,0 +1,80 @@
+name: Data freshness
+
+# Check-only: is NASA's GISTEMP newer than the committed snapshot, and would the README's
+# findings still hold on it? Nothing is committed — the snapshot stays frozen on purpose
+# (reproducibility; tests/test_findings.py ties the README to it). The job turns red only
+# when a finding no longer holds, so GitHub's failure e-mail is the reminder to update.
+on:
+  schedule:
+    - cron: "0 6 16 * *"            # 06:00 UTC on the 16th; NASA usually updates mid-month
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    # Throwaway credentials that exist only inside this job's database container.
+    env:
+      POSTGRES_DB: global_temperature
+      POSTGRES_USER: gts_admin
+      POSTGRES_PASSWORD: ci-only-admin-password
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5433"
+      POSTGRES_READER_USER: gts_reader
+      POSTGRES_READER_PASSWORD: ci-only-reader-password
+      PSQL_MODE: local
+      PYTHONIOENCODING: utf-8
+
+    services:
+      db:
+        image: postgis/postgis:17-3.6
+        env:
+          POSTGRES_DB: global_temperature
+          POSTGRES_USER: gts_admin
+          POSTGRES_PASSWORD: ci-only-admin-password
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U gts_admin -d global_temperature"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Compare with NASA
+        id: compare
+        run: python scripts/check_freshness.py
+
+      # Only on a new release: load it into a fresh database (inside this runner only) and
+      # re-run the findings tests. The grid is skipped, so the land/ocean finding is skipped.
+      - name: Re-check the README findings on the new release
+        if: steps.compare.outputs.changed == 'true'
+        run: |
+          set -o pipefail
+          python scripts/download_data.py
+          python scripts/clean_data.py
+          python scripts/setup_database.py
+          python scripts/load_data.py
+          python scripts/load_drivers.py
+          python scripts/run_models.py
+          status=0
+          {
+            echo "### README findings on the new release"
+            echo '```'
+            pytest tests/test_findings.py -q -rA --no-header -p no:cacheprovider 2>&1 | tee /dev/stderr | tail -25 || status=$?
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $status                 # red only when a README finding no longer holds
